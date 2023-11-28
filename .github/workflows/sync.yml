@@ -15,4 +15,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Sync branch using subtree
         run: |
+          git pull
           git subtree push --prefix materialchart origin release
