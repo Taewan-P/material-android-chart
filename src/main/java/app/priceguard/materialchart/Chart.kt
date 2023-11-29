@@ -10,6 +10,7 @@ import android.graphics.Shader.TileMode
 import android.graphics.Rect
 import android.graphics.Typeface
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import androidx.appcompat.widget.ThemeUtils
 import androidx.core.content.ContextCompat
@@ -22,7 +23,6 @@ import app.priceguard.materialchart.util.plus
 import app.priceguard.materialchart.util.times
 import app.priceguard.materialchart.util.toDp
 import app.priceguard.materialchart.util.toPx
-import com.google.android.material.resources.MaterialAttributes
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
@@ -51,14 +51,14 @@ class Chart @JvmOverloads constructor(
     var axisStrokeWidth = 3f
     // Tick: lines that are shown in axis with data labels
     var halfTickLength: Dp = Dp(4F)
-    
+
     // Use Android theme
-    var colorPrimary: Int = Color.BLACK
-    var colorSecondary: Int = Color.BLACK
-    var colorError: Int = Color.BLACK
-    var colorSurface: Int = Color.BLACK
-    var colorOnSurface: Int = Color.BLACK
-  
+    private var colorPrimary: Int
+    private var colorSecondary: Int
+    private var colorError: Int
+    private var colorSurface: Int
+    private var colorOnSurface: Int
+
     private val paint = Paint()
     private val xAxisPaint = Paint(paint)
     private val yAxisPaint = Paint(paint)
@@ -70,7 +70,40 @@ class Chart @JvmOverloads constructor(
 
     init {
         // TODO: 그래프 영역 선언, 캔버스 생성
-        // New canvas
+
+        val typedArray = context.obtainStyledAttributes(
+            attrs,
+            R.styleable.Chart,
+            defStyleAttr,
+            0
+        )
+
+        colorPrimary = typedArray.getColor(
+            R.styleable.Chart_colorPrimary,
+            Color.BLACK
+        )
+
+        colorSecondary = typedArray.getColor(
+            R.styleable.Chart_colorSecondary,
+            Color.GRAY
+        )
+
+        colorError = typedArray.getColor(
+            R.styleable.Chart_colorError,
+            Color.BLACK
+        )
+
+        colorSurface = typedArray.getColor(
+            R.styleable.Chart_colorSurface,
+            Color.WHITE
+        )
+
+        colorOnSurface = typedArray.getColor(
+            R.styleable.Chart_colorOnSurface,
+            Color.BLACK
+        )
+
+        typedArray.recycle()
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -78,15 +111,6 @@ class Chart @JvmOverloads constructor(
         drawXAxis(canvas, xAxisPaint)
         drawYAxis(canvas, yAxisPaint)
         drawLine(canvas)
-    }
-
-    fun setColor(primary: Int, secondary: Int, error: Int, surface: Int, onSurface: Int) {
-        colorPrimary = primary
-        colorSecondary = secondary
-        colorError = error
-        colorSurface = surface
-        colorOnSurface = onSurface
-        invalidate()
     }
 
     private fun drawXAxis(canvas: Canvas, paint: Paint) {
