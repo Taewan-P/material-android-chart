@@ -80,7 +80,7 @@ class Chart @JvmOverloads constructor(
         val availableLabels = (availableSpace / xAxisSpacing).value.toInt()
 
         // Calculate how much each gridlines should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 2).toFloat())
+        val unit = roundToSecondSignificantDigit((maxValue - minValue) / availableLabels.toFloat())
 
         // Draw Axis
         val axisStartPointX: Px = xAxisPadding.toPx(context)
@@ -107,7 +107,7 @@ class Chart @JvmOverloads constructor(
         paint.typeface = Typeface.DEFAULT
         paint.textSize = 24F
 
-        (1.. availableLabels).forEach { idx ->
+        (0.. availableLabels).forEach { idx ->
             val startPointX: Px = (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
             val startPointY: Px = (axisStartPointY.toDp(context) - halfGridLineLength).toPx(context)
             val endPointX: Px = (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
@@ -121,7 +121,7 @@ class Chart @JvmOverloads constructor(
                 paint
             )
 
-            val label = (unit * idx.toFloat() * 100.0).roundToInt() / 100.0
+            val label = minValue + (unit * idx.toFloat() * 100.0).roundToInt() / 100.0
             val labelString = if (label - label.toInt() > 1e-6) {
                 label.toString()
             } else {
@@ -156,7 +156,7 @@ class Chart @JvmOverloads constructor(
         val availableLabels = (availableSpace / yAxisSpacing).value.toInt()
 
         // Calculate how much each gridlines should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 2).toFloat())
+        val unit = roundToSecondSignificantDigit((maxValue - minValue) / availableLabels.toFloat())
 
         // Draw Axis
         val axisStartPointX: Px = xAxisPadding.toPx(context)
@@ -197,7 +197,7 @@ class Chart @JvmOverloads constructor(
                 paint
             )
 
-            val label = (unit * idx.toFloat() * 100.0).roundToInt() / 100.0
+            val label = minValue + (unit * idx.toFloat() * 100.0).roundToInt() / 100.0
             val labelString = if (label - label.toInt() > 1e-6) {
                 label.toString()
             } else {
