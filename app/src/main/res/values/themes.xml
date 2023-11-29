@@ -31,13 +31,5 @@
         <item name="android:windowLightStatusBar">true</item>
     </style>
 
-    <style name="Theme.ChartSample" parent="Base.Theme.ChartSample" />
-
-    <style name="ExampleChartTheme">
-        <item name="colorPrimary">?attr/colorPrimary</item>
-        <item name="colorSecondary">?attr/colorSecondary</item>
-        <item name="colorError">?attr/colorError</item>
-        <item name="colorSurface">?attr/colorSurface</item>
-        <item name="colorOnSurface">?attr/colorOnSurface</item>
-    </style>
+    <style name="Theme.ChartSample" parent="Base.Theme.ChartSample"/>
 </resources>
