@@ -12,6 +12,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        
         val chart1 = findViewById<Chart>(R.id.example_chart_1)
         chart1.dataset = ExampleDataset(
             showXAxis = true,
@@ -43,7 +44,8 @@ class MainActivity : AppCompatActivity() {
                 ExampleData(16F, 8F),
                 ExampleData(18F, 4F),
                 ExampleData(24F, 2F),
-                ExampleData(25F, 8F)
+                ExampleData(25F, 8F),
+                ExampleData(26F, 8F)
             )
         )
         val primary = TypedValue()
