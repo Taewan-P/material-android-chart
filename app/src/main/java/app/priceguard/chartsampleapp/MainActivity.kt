@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity() {
                 ExampleData(7F, 2F),
                 ExampleData(8F, 8F)
             ),
-            gridLines = listOf(ExampleGridLine("목표가", 7f))
+            gridLines = listOf(ExampleGridLine("목표가", -1f), ExampleGridLine("역대최저가", 1f))
         )
 
         val chart2 = findViewById<Chart>(R.id.example_chart_2)
