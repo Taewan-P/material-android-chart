@@ -1,19 +1,17 @@
 package app.priceguard.materialchart
 
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.DashPathEffect
 import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Shader.TileMode
 import android.graphics.Rect
+import android.graphics.Shader.TileMode
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
-import androidx.appcompat.widget.ThemeUtils
-import androidx.core.content.ContextCompat
 import app.priceguard.materialchart.data.ChartDataset
 import app.priceguard.materialchart.util.Dp
 import app.priceguard.materialchart.util.Px
@@ -27,6 +25,7 @@ import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.roundToInt
+
 
 class Chart @JvmOverloads constructor(
     context: Context,
@@ -381,7 +380,9 @@ class Chart @JvmOverloads constructor(
         val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisPadding * Dp(2F)
 
         //Set paint
+        val dashPath = DashPathEffect(floatArrayOf(25f, 5f), 2f)
         paint.style = Paint.Style.STROKE
+        paint.pathEffect = dashPath
         paint.strokeWidth = gridLineStrokeWidth
         paint.color = colorSecondary
 
@@ -402,6 +403,7 @@ class Chart @JvmOverloads constructor(
 
             // Draw ticks & labels
             paint.strokeWidth = 2F
+            paint.pathEffect = null
             paint.typeface = Typeface.DEFAULT
             paint.textSize = 24F
 
