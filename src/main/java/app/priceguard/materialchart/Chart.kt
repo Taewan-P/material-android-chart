@@ -51,6 +51,7 @@ class Chart @JvmOverloads constructor(
     var axisStrokeWidth = 3f
     // Tick: lines that are shown in axis with data labels
     var halfTickLength: Dp = Dp(4F)
+    var gridLineStrokeWidth = 6f
 
     // Use Android theme
     private var colorPrimary: Int
@@ -65,6 +66,7 @@ class Chart @JvmOverloads constructor(
     private val linesPaint = Paint(paint)
     private val gradientPaint = Paint(paint)
     private val gradientCoverPaint = Paint(paint)
+    private val gridLinePaint = Paint(paint)
 
     private val bounds = Rect()
 
@@ -108,9 +110,10 @@ class Chart @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        drawLine(canvas)
+        drawGridLine(canvas, paint)
         drawXAxis(canvas, xAxisPaint)
         drawYAxis(canvas, yAxisPaint)
-        drawLine(canvas)
     }
 
     private fun drawXAxis(canvas: Canvas, paint: Paint) {
@@ -357,4 +360,59 @@ class Chart @JvmOverloads constructor(
         return (number / power).roundToInt() * power
     }
 
+    private fun drawGridLine(canvas: Canvas, paint: Paint) {
+        if(dataset == null) return
+
+        // Get chart data & max/min value
+        val chartData = dataset?.data ?: return
+
+        val maxY = chartData.maxOf { it.y }
+        val minY = chartData.minOf { it.y }
+        val spaceY = maxY - minY
+
+        val graphSpaceStartY = yAxisPadding.toPx(context) + yGraphPadding.toPx(context) - Px(1f)
+        val graphSpaceEndY = Px(height.toFloat()) - yAxisPadding.toPx(context) - yGraphPadding.toPx(context)
+
+        val graphHeight = graphSpaceEndY - graphSpaceStartY
+
+        // Calculate available axis space
+        val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisPadding * Dp(2F)
+
+        //Set paint
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = gridLineStrokeWidth
+        paint.color = colorSecondary
+
+        //Draw GridLines
+        dataset?.gridLines?.forEach { data ->
+            val axisStartPointX: Px = xAxisPadding.toPx(context)
+            val axisStartPointY: Px = Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
+            val axisEndPointX: Px = (xAxisPadding + availableSpace).toPx(context)
+            val axisEndPointY: Px = Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
+
+            canvas.drawLine(
+                axisStartPointX.value,
+                axisStartPointY.value,
+                axisEndPointX.value,
+                axisEndPointY.value,
+                paint
+            )
+
+            // Draw ticks & labels
+            paint.strokeWidth = 2F
+            paint.typeface = Typeface.DEFAULT
+            paint.textSize = 24F
+
+            val labelString = data.name
+
+            paint.getTextBounds(labelString, 0, labelString.length, bounds)
+            val textWidth = Px(bounds.width().toFloat())
+            val textHeight = Px(bounds.height().toFloat())
+
+            val labelStartPointX: Px = axisEndPointX - textWidth
+            val labelStartPointY: Px = axisStartPointY - textHeight
+
+            canvas.drawText(data.name, labelStartPointX.value, labelStartPointY.value, paint)
+        }
+    }
 }
