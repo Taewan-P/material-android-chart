@@ -362,7 +362,6 @@ class Chart @JvmOverloads constructor(
     }
 
     private fun drawGridLine(canvas: Canvas, paint: Paint) {
-        if(dataset == null) return
 
         // Get chart data & max/min value
         val chartData = dataset?.data ?: return
