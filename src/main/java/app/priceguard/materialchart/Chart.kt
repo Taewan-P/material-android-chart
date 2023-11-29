@@ -92,7 +92,7 @@ class Chart @JvmOverloads constructor(
 
         colorError = typedArray.getColor(
             R.styleable.Chart_colorError,
-            Color.BLACK
+            Color.RED
         )
 
         colorSurface = typedArray.getColor(
@@ -104,6 +104,8 @@ class Chart @JvmOverloads constructor(
             R.styleable.Chart_colorOnSurface,
             Color.BLACK
         )
+
+        setBackgroundColor(colorSurface)
 
         typedArray.recycle()
     }
@@ -300,8 +302,8 @@ class Chart @JvmOverloads constructor(
                 graphSpaceStartY.value,
                 graphSpaceStartX.value,
                 chartSpaceEndY.value,
-                Color.RED,
-                Color.WHITE,
+                colorPrimary,
+                Color.TRANSPARENT,
                 TileMode.CLAMP
             )
 
@@ -316,12 +318,12 @@ class Chart @JvmOverloads constructor(
 
         // 그라데이션이 필요 없는 부분을 덮어버리는 paint 설정
         gradientCoverPaint.style = Paint.Style.FILL
-        gradientCoverPaint.color = colorPrimary
+        gradientCoverPaint.color = colorSurface
 
         // 선 그리는 paint 설정
         linesPaint.style = Paint.Style.FILL
         linesPaint.strokeWidth = 1F
-        linesPaint.color = Color.RED
+        linesPaint.color = colorPrimary
 
         chartData.forEachIndexed { index, data ->
             if (index < size - 1) {
