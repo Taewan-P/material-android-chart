@@ -1,12 +1,15 @@
 package app.priceguard.materialchart
 
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
+import androidx.appcompat.widget.ThemeUtils
+import androidx.core.content.ContextCompat
 import app.priceguard.materialchart.data.ChartDataset
 import app.priceguard.materialchart.util.Dp
 import app.priceguard.materialchart.util.Px
@@ -16,6 +19,8 @@ import app.priceguard.materialchart.util.plus
 import app.priceguard.materialchart.util.times
 import app.priceguard.materialchart.util.toDp
 import app.priceguard.materialchart.util.toPx
+import com.google.android.material.resources.MaterialAttributes
+
 
 class Chart @JvmOverloads constructor(
     context: Context,
@@ -34,10 +39,17 @@ class Chart @JvmOverloads constructor(
     var xAxisSpacing: Dp = Dp(32F)
     var yAxisSpacing: Dp = Dp(32F)
 
+    // Use Android theme
+    var colorPrimary: Int = Color.BLACK
+    var colorSecondary: Int = Color.BLACK
+    var colorError: Int = Color.BLACK
+    var colorSurface: Int = Color.BLACK
+    var colorOnSurface: Int = Color.BLACK
+
     // Gridline: lines that are shown in axis with data labels
     var halfGridLineLength: Dp = Dp(4F)
 
-    private var viewWidth = Dp(width.toFloat()) 
+    private var viewWidth = Dp(width.toFloat())
     private var viewHeight = Dp(height.toFloat())
 
     private val paint = Paint()
@@ -48,18 +60,26 @@ class Chart @JvmOverloads constructor(
     init {
         // TODO: 그래프 영역 선언, 캔버스 생성
         // New canvas
-
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        viewWidth = Dp(width.toFloat()) 
+        viewWidth = Dp(width.toFloat())
         viewHeight = Dp(height.toFloat())
 
         drawXAxis(canvas, xAxisPaint)
         drawYAxis(canvas, yAxisPaint)
         drawLine(canvas, linesPaint)
+    }
+
+    fun setColor(primary: Int, secondary: Int, error: Int, surface: Int, onSurface: Int) {
+        colorPrimary = primary
+        colorSecondary = secondary
+        colorError = error
+        colorSurface = surface
+        colorOnSurface = onSurface
+        invalidate()
     }
 
     private fun drawXAxis(canvas: Canvas, paint: Paint) {
@@ -77,7 +97,7 @@ class Chart @JvmOverloads constructor(
 
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 3F
-        paint.color = Color.BLACK
+        paint.color = colorOnSurface
         paint.strokeJoin = Paint.Join.ROUND
         paint.strokeCap = Paint.Cap.ROUND
 
@@ -93,9 +113,11 @@ class Chart @JvmOverloads constructor(
         paint.strokeWidth = 2F
 
         (1 until availableLabels).forEach { idx ->
-            val startPointX: Px = (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
+            val startPointX: Px =
+                (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
             val startPointY: Px = (axisStartPointY.toDp(context) - halfGridLineLength).toPx(context)
-            val endPointX: Px = (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
+            val endPointX: Px =
+                (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
             val endPointY: Px = (axisStartPointY.toDp(context) + halfGridLineLength).toPx(context)
 
             canvas.drawLine(
@@ -126,7 +148,7 @@ class Chart @JvmOverloads constructor(
 
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 3F
-        paint.color = Color.BLACK
+        paint.color = colorOnSurface
         paint.strokeJoin = Paint.Join.ROUND
         paint.strokeCap = Paint.Cap.ROUND
 
@@ -144,9 +166,11 @@ class Chart @JvmOverloads constructor(
 
         (1 until availableLabels).forEach { idx ->
             val startPointX: Px = (axisStartPointX.toDp(context) - halfGridLineLength).toPx(context)
-            val startPointY: Px = (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat())).toPx(context)
+            val startPointY: Px =
+                (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat())).toPx(context)
             val endPointX: Px = (axisStartPointX.toDp(context) + halfGridLineLength).toPx(context)
-            val endPointY: Px = (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat())).toPx(context)
+            val endPointY: Px =
+                (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat())).toPx(context)
 
             canvas.drawLine(
                 startPointX.value,
@@ -167,7 +191,7 @@ class Chart @JvmOverloads constructor(
         // TODO: 값을 받아, 선으로 잇기
 
         // x,y 간격 계산
-        if(dataset == null) return
+        if (dataset == null) return
 
         val chartData = dataset?.data!!
         val size = chartData.size
@@ -184,7 +208,7 @@ class Chart @JvmOverloads constructor(
 
         paint.style = Paint.Style.FILL
         paint.strokeWidth = 5F
-        paint.color = Color.RED
+        paint.color = colorPrimary
 
         Log.d("asdf", dataset.toString())
         dataset?.data?.forEachIndexed { index, data ->
