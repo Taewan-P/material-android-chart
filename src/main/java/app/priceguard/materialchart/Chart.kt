@@ -387,16 +387,16 @@ class Chart @JvmOverloads constructor(
 
         //Draw GridLines
         dataset?.gridLines?.forEach { data ->
+            val height: Px = Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
+            if (height.value < graphSpaceStartY.value || height.value > graphSpaceEndY.value) return@forEach
             val axisStartPointX: Px = xAxisPadding.toPx(context)
-            val axisStartPointY: Px = Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
             val axisEndPointX: Px = (xAxisPadding + availableSpace).toPx(context)
-            val axisEndPointY: Px = Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
 
             canvas.drawLine(
                 axisStartPointX.value,
-                axisStartPointY.value,
+                height.value,
                 axisEndPointX.value,
-                axisEndPointY.value,
+                height.value,
                 paint
             )
 
@@ -412,7 +412,7 @@ class Chart @JvmOverloads constructor(
             val textHeight = Px(bounds.height().toFloat())
 
             val labelStartPointX: Px = axisEndPointX - textWidth
-            val labelStartPointY: Px = axisStartPointY - textHeight
+            val labelStartPointY: Px = height - textHeight
 
             canvas.drawText(data.name, labelStartPointX.value, labelStartPointY.value, paint)
         }
