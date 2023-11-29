@@ -103,6 +103,8 @@ class Chart @JvmOverloads constructor(
             Color.BLACK
         )
 
+        setBackgroundColor(colorSurface)
+
         typedArray.recycle()
     }
 
@@ -298,7 +300,7 @@ class Chart @JvmOverloads constructor(
                 graphSpaceStartX.value,
                 chartSpaceEndY.value,
                 colorPrimary,
-                colorSurface,
+                Color.TRANSPARENT,
                 TileMode.CLAMP
             )
 
