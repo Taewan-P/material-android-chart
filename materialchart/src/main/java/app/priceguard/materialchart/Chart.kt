@@ -3,7 +3,9 @@ package app.priceguard.materialchart
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Shader.TileMode
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
@@ -29,6 +31,9 @@ class Chart @JvmOverloads constructor(
     var xAxisPadding: Dp = Dp(16F)
     var yAxisPadding: Dp = Dp(16F)
 
+    var xGraphPadding: Dp = Dp(32F)
+    var yGraphPadding: Dp = Dp(32F)
+
     // Spacing: Empty space for each axis value. Depending on this value, the data may not fully show.
     // If it doesn't fit, you should change the width & height of the chart view.
     var xAxisSpacing: Dp = Dp(32F)
@@ -37,13 +42,17 @@ class Chart @JvmOverloads constructor(
     // Gridline: lines that are shown in axis with data labels
     var halfGridLineLength: Dp = Dp(4F)
 
-    private var viewWidth = Dp(width.toFloat()) 
+    var axisStrokeWidth = 3f
+
+    private var viewWidth = Dp(width.toFloat())
     private var viewHeight = Dp(height.toFloat())
 
     private val paint = Paint()
     private val xAxisPaint = Paint(paint)
     private val yAxisPaint = Paint(paint)
     private val linesPaint = Paint(paint)
+    private val gradientPaint = Paint(paint)
+    private val gradientCoverPaint = Paint(paint)
 
     init {
         // TODO: 그래프 영역 선언, 캔버스 생성
@@ -54,12 +63,12 @@ class Chart @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        viewWidth = Dp(width.toFloat()) 
+        viewWidth = Dp(width.toFloat())
         viewHeight = Dp(height.toFloat())
 
         drawXAxis(canvas, xAxisPaint)
         drawYAxis(canvas, yAxisPaint)
-        drawLine(canvas, linesPaint)
+        drawLine(canvas)
     }
 
     private fun drawXAxis(canvas: Canvas, paint: Paint) {
@@ -76,7 +85,7 @@ class Chart @JvmOverloads constructor(
         val axisEndPointY: Px = Px(height.toFloat()) - yAxisPadding.toPx(context)
 
         paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 3F
+        paint.strokeWidth = axisStrokeWidth
         paint.color = Color.BLACK
         paint.strokeJoin = Paint.Join.ROUND
         paint.strokeCap = Paint.Cap.ROUND
@@ -93,9 +102,11 @@ class Chart @JvmOverloads constructor(
         paint.strokeWidth = 2F
 
         (1 until availableLabels).forEach { idx ->
-            val startPointX: Px = (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
+            val startPointX: Px =
+                (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
             val startPointY: Px = (axisStartPointY.toDp(context) - halfGridLineLength).toPx(context)
-            val endPointX: Px = (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
+            val endPointX: Px =
+                (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
             val endPointY: Px = (axisStartPointY.toDp(context) + halfGridLineLength).toPx(context)
 
             canvas.drawLine(
@@ -125,7 +136,7 @@ class Chart @JvmOverloads constructor(
         val axisEndPointY: Px = yAxisPadding.toPx(context)
 
         paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 3F
+        paint.strokeWidth = axisStrokeWidth
         paint.color = Color.BLACK
         paint.strokeJoin = Paint.Join.ROUND
         paint.strokeCap = Paint.Cap.ROUND
@@ -144,9 +155,11 @@ class Chart @JvmOverloads constructor(
 
         (1 until availableLabels).forEach { idx ->
             val startPointX: Px = (axisStartPointX.toDp(context) - halfGridLineLength).toPx(context)
-            val startPointY: Px = (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat())).toPx(context)
+            val startPointY: Px =
+                (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat())).toPx(context)
             val endPointX: Px = (axisStartPointX.toDp(context) + halfGridLineLength).toPx(context)
-            val endPointY: Px = (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat())).toPx(context)
+            val endPointY: Px =
+                (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat())).toPx(context)
 
             canvas.drawLine(
                 startPointX.value,
@@ -162,12 +175,8 @@ class Chart @JvmOverloads constructor(
 
     }
 
-    private fun drawLine(canvas: Canvas, paint: Paint) {
-        // TODO: 페인트 그래프 값 설정
-        // TODO: 값을 받아, 선으로 잇기
-
-        // x,y 간격 계산
-        if(dataset == null) return
+    private fun drawLine(canvas: Canvas) {
+        if (dataset == null) return
 
         val chartData = dataset?.data!!
         val size = chartData.size
@@ -180,25 +189,69 @@ class Chart @JvmOverloads constructor(
         val spaceX = maxX - minX
         val spaceY = maxY - minY
 
-        val chartSpaceStart = Dp(64F)
+        // 축과 그래프 사이 빈틈 제거 위해 spaceStart 1f 빼기
+        val graphSpaceStartX = xAxisPadding.toPx(context) + Px(axisStrokeWidth) - Px(1f)
+        val graphSpaceEndX = Px(width.toFloat()) - xAxisPadding.toPx(context) - xGraphPadding.toPx(context)
+        val graphSpaceStartY = yAxisPadding.toPx(context) + yGraphPadding.toPx(context) - Px(1f)
+        val graphSpaceEndY = Px(height.toFloat()) - yAxisPadding.toPx(context) - yGraphPadding.toPx(context)
 
-        paint.style = Paint.Style.FILL
-        paint.strokeWidth = 5F
-        paint.color = Color.RED
+        val graphWidth = graphSpaceEndX - graphSpaceStartX
+        val graphHeight = graphSpaceEndY - graphSpaceStartY
 
-        Log.d("asdf", dataset.toString())
-        dataset?.data?.forEachIndexed { index, data ->
+        val chartSpaceEndY = Px(height.toFloat()) - yAxisPadding.toPx(context) - Px(axisStrokeWidth)
+
+        // 그라데이션 위치, 색상, 모드 설정
+        gradientPaint.shader = LinearGradient(
+            graphSpaceStartX.value,
+            graphSpaceStartY.value,
+            graphSpaceStartX.value,
+            chartSpaceEndY.value,
+            Color.RED,
+            Color.WHITE,
+            TileMode.CLAMP
+        )
+
+        // 그래프 전체를 그라데이션으로 칠하기
+        canvas.drawRect(
+            graphSpaceStartX.value,
+            graphSpaceStartY.value,
+            graphSpaceEndX.value,
+            chartSpaceEndY.value,
+            gradientPaint
+        )
+
+        // 그라데이션이 필요 없는 부분을 덮어버리는 paint 설정
+        gradientCoverPaint.style = Paint.Style.FILL
+        gradientCoverPaint.color = Color.WHITE
+
+        // 선 그리는 paint 설정
+        linesPaint.style = Paint.Style.FILL
+        linesPaint.strokeWidth = 1F
+        linesPaint.color = Color.RED
+
+
+        chartData.forEachIndexed { index, data ->
             if (index < size - 1) {
                 val next = chartData[index + 1]
 
-                val startX = Px((data.x - minX) / spaceX) * (Px(width.toFloat()) - chartSpaceStart.toPx(context)) + xAxisPadding.toPx(context)
-                val startY = Px(1 - (data.y - minY) / spaceY) * (Px(height.toFloat()) - chartSpaceStart.toPx(context)) + yAxisPadding.toPx(context)
-                val endX = Px((next.x - minX) / spaceX) * (Px(width.toFloat()) - chartSpaceStart.toPx(context)) + xAxisPadding.toPx(context)
-                val endY = Px(1 - (next.y - minY) / spaceY) * (Px(height.toFloat()) - chartSpaceStart.toPx(context)) + yAxisPadding.toPx(context)
-                Log.d("dataset", "$startX, $startY, $endX, $endY")
+                // 각 데이터를 그릴 시작과 끝 위치 계산
+                val startX = Px((data.x - minX) / spaceX) * graphWidth + graphSpaceStartX
+                val startY = Px(1 - (data.y - minY) / spaceY) * graphHeight + graphSpaceStartY
+                val endX = Px((next.x - minX) / spaceX) * graphWidth + graphSpaceStartX
+                val endY = Px(1 - (next.y - minY) / spaceY) * graphHeight + graphSpaceStartY
 
-                canvas.drawLine(startX.value, startY.value, endX.value, startY.value, paint)
-                canvas.drawLine(endX.value, startY.value, endX.value, endY.value, paint)
+                // 그라데이션 필요 없는 부분 덮어버리기 ( Rect 사이로 그라데이션이 보이는 걸 방지하기 위해 endX 1f 값 더함)
+                canvas.drawRect(
+                    startX.value,
+                    graphSpaceStartY.value,
+                    endX.value + 1f,
+                    startY.value,
+                    gradientCoverPaint
+                )
+
+                // 그래프 선 그리기
+                canvas.drawLine(startX.value, startY.value, endX.value, startY.value, linesPaint)
+                canvas.drawLine(endX.value, startY.value, endX.value, endY.value, linesPaint)
             }
         }
     }
