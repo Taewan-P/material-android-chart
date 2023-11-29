@@ -121,28 +121,14 @@ class Chart @JvmOverloads constructor(
         // Get chart data & max/min value
         val chartData = dataset?.data ?: return
 
-        val maxValue = chartData.maxOf { it.x }
-        val minValue = chartData.minOf { it.x }
-
         // Calculate available axis space
         val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
 
         // Calculate axis space that labels are actually drawn
         val availableLabelSpace: Dp = availableSpace - xAxisPadding
 
-        // Calculate how much ticks can be drawn (Based on spacing settings above)
-        val availableLabels = (availableLabelSpace / xAxisSpacing).value.toInt()
-
-        // Calculate how much each ticks should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / availableLabels.toFloat())
-
-        // Calculate how much labels are actually needed & override spacing
-        val neededLabels = ((maxValue - minValue) / unit).toInt()
-        val actualSpacing = if (availableLabels > neededLabels) {
-            (availableLabelSpace / Dp(neededLabels.toFloat()))
-        } else {
-            xAxisSpacing
-        }
+        // Calculate the label spacing
+        val tickSpacing: Dp = availableLabelSpace / Dp(chartData.size.toFloat() - 1)
 
         // Draw Axis
         val axisStartPointX: Px = xAxisMargin.toPx(context)
@@ -169,8 +155,8 @@ class Chart @JvmOverloads constructor(
         paint.typeface = Typeface.DEFAULT
         paint.textSize = 24F
 
-        (0.. neededLabels).forEach { idx ->
-            val startPointX: Px = (axisStartPointX.toDp(context) + actualSpacing * Dp(idx.toFloat())).toPx(context)
+        (chartData.indices).forEach { idx ->
+            val startPointX: Px = (axisStartPointX.toDp(context) + tickSpacing * Dp(idx.toFloat())).toPx(context)
             val startPointY: Px = (axisStartPointY.toDp(context) - halfTickLength).toPx(context)
             val endPointY: Px = (axisStartPointY.toDp(context) + halfTickLength).toPx(context)
 
@@ -182,8 +168,8 @@ class Chart @JvmOverloads constructor(
                 paint
             )
 
-            val label = maxValue - (unit * (neededLabels - idx).toFloat() * 100.0).roundToInt() / 100.0
-            val labelString = if (label - label.toInt() > 1e-6) {
+            val label = chartData[idx].x
+            val labelString = if (label - label.toInt() > 1e-4) {
                 String.format("%.1f", label)
             } else {
                 label.toInt().toString()
@@ -193,7 +179,7 @@ class Chart @JvmOverloads constructor(
             val textWidth = Px(bounds.width().toFloat())
             val textHeight = Px(bounds.height().toFloat())
 
-            val labelStartPointX: Px = (axisStartPointX.toDp(context) + actualSpacing * Dp(idx.toFloat()) - (textWidth / Px(2F)).toDp(context)).toPx(context)
+            val labelStartPointX: Px = (axisStartPointX.toDp(context) + tickSpacing * Dp(idx.toFloat()) - (textWidth / Px(2F)).toDp(context)).toPx(context)
             val labelStartPointY: Px = (axisStartPointY.toDp(context) + halfTickLength + Dp(8F) + textHeight.toDp(context)).toPx(context)
 
             canvas.drawText(labelString, labelStartPointX.value, labelStartPointY.value, paint)
