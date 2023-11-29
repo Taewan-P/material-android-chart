@@ -80,7 +80,7 @@ class Chart @JvmOverloads constructor(
         val availableLabels = (availableSpace / xAxisSpacing).value.toInt()
 
         // Calculate how much each gridlines should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / availableLabels.toFloat())
+        val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 2).toFloat())
 
         // Draw Axis
         val axisStartPointX: Px = xAxisPadding.toPx(context)
@@ -156,7 +156,7 @@ class Chart @JvmOverloads constructor(
         val availableLabels = (availableSpace / yAxisSpacing).value.toInt()
 
         // Calculate how much each gridlines should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / availableLabels.toFloat())
+        val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 2).toFloat())
 
         // Draw Axis
         val axisStartPointX: Px = xAxisPadding.toPx(context)
