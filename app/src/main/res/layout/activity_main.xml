@@ -12,6 +12,7 @@
 
         <app.priceguard.materialchart.Chart
             android:id="@+id/example_chart_1"
+            style="@style/ExampleChartTheme"
             android:layout_width="0dp"
             android:layout_height="0dp"
             app:layout_constraintBottom_toTopOf="@id/example_chart_2"
@@ -21,6 +22,7 @@
 
         <app.priceguard.materialchart.Chart
             android:id="@+id/example_chart_2"
+            style="@style/ExampleChartThemeAlternative"
             android:layout_width="0dp"
             android:layout_height="0dp"
             app:layout_constraintBottom_toBottomOf="parent"

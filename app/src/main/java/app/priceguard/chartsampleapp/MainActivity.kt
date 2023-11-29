@@ -48,22 +48,5 @@ class MainActivity : AppCompatActivity() {
                 ExampleData(26F, 8F)
             )
         )
-        val primary = TypedValue()
-        val secondary = TypedValue()
-        val error = TypedValue()
-        val surface = TypedValue()
-        val onSurface = TypedValue()
-        this.theme.resolveAttribute(android.R.attr.colorPrimary, primary, true)
-        this.theme.resolveAttribute(android.R.attr.colorSecondary, secondary, true)
-        this.theme.resolveAttribute(android.R.attr.colorError, error, true)
-        this.theme.resolveAttribute(com.google.android.material.R.attr.colorSurface, surface, true)
-        this.theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurface, onSurface, true)
-        chart2.setColor(
-            primary.data,
-            secondary.data,
-            error.data,
-            surface.data,
-            onSurface.data
-        )
     }
 }
