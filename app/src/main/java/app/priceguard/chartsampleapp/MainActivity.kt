@@ -1,28 +1,41 @@
 package app.priceguard.chartsampleapp
 
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.util.TypedValue
 import app.priceguard.materialchart.Chart
+import java.lang.String
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        findViewById<Chart>(R.id.example_chart_1).dataset = ExampleDataset(
-            showXAxis = true, showYAxis = false, touchListener = { v, _ -> v.performClick() }, data = listOf(
-                ExampleData(1F, 11000F),
-                ExampleData(2F, 11000F),
-                ExampleData(3F, 13000F),
-                ExampleData(4F, 12000F),
-                ExampleData(5F, 11000F),
-                ExampleData(6F, 14000F),
-                ExampleData(7F, 12000F),
-                ExampleData(8F, 11000F),
-                ExampleData(9F, 11000F)
+        
+        val chart1 = findViewById<Chart>(R.id.example_chart_1)
+        chart1.dataset = ExampleDataset(
+            showXAxis = true,
+            showYAxis = false,
+            touchListener = { v, _ -> v.performClick() },
+            data = listOf(
+                ExampleData(1F, 10F),
+                ExampleData(2F, 1F),
+                ExampleData(3F, 3F),
+                ExampleData(4F, 7F),
+                ExampleData(5F, 8F),
+                ExampleData(6F, 4F),
+                ExampleData(7F, 2F),
+                ExampleData(8F, 8F)
             )
         )
-        findViewById<Chart>(R.id.example_chart_2).dataset = ExampleDataset(
-            showXAxis = false, showYAxis = false, touchListener = { v, _ -> v.performClick() }, data = listOf(
+
+        val chart2 = findViewById<Chart>(R.id.example_chart_2)
+        chart2.dataset = ExampleDataset(
+            showXAxis = false,
+            showYAxis = false,
+            touchListener = { v, _ -> v.performClick() },
+            data = listOf(
                 ExampleData(2F, 5F),
                 ExampleData(5F, 10F),
                 ExampleData(8F, 1F),
@@ -34,6 +47,23 @@ class MainActivity : AppCompatActivity() {
                 ExampleData(25F, 8F),
                 ExampleData(26F, 8F)
             )
+        )
+        val primary = TypedValue()
+        val secondary = TypedValue()
+        val error = TypedValue()
+        val surface = TypedValue()
+        val onSurface = TypedValue()
+        this.theme.resolveAttribute(android.R.attr.colorPrimary, primary, true)
+        this.theme.resolveAttribute(android.R.attr.colorSecondary, secondary, true)
+        this.theme.resolveAttribute(android.R.attr.colorError, error, true)
+        this.theme.resolveAttribute(com.google.android.material.R.attr.colorSurface, surface, true)
+        this.theme.resolveAttribute(com.google.android.material.R.attr.colorOnSurface, onSurface, true)
+        chart2.setColor(
+            primary.data,
+            secondary.data,
+            error.data,
+            surface.data,
+            onSurface.data
         )
     }
 }
