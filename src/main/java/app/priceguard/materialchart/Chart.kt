@@ -134,7 +134,7 @@ class Chart @JvmOverloads constructor(
         val availableLabels = (availableLabelSpace / xAxisSpacing).value.toInt()
 
         // Calculate how much each ticks should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 1).toFloat())
+        val unit = roundToSecondSignificantDigit((maxValue - minValue) / availableLabels.toFloat())
 
         // Calculate how much labels are actually needed & override spacing
         val neededLabels = ((maxValue - minValue) / unit).toInt()
@@ -219,7 +219,7 @@ class Chart @JvmOverloads constructor(
         val availableLabels = (availableLabelSpace / yAxisSpacing).value.toInt()
 
         // Calculate how much each ticks should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 1).toFloat())
+        val unit = roundToSecondSignificantDigit((maxValue - minValue) / availableLabels.toFloat())
 
         // Calculate how much labels are actually needed & override spacing
         val neededLabels = ((maxValue - minValue) / unit).toInt()
