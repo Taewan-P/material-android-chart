@@ -192,9 +192,9 @@ class Chart @JvmOverloads constructor(
                 val next = chartData[index + 1]
 
                 val startX = Px((data.x - minX) / spaceX) * (Px(width.toFloat()) - chartSpaceStart.toPx(context)) + xAxisPadding.toPx(context)
-                val startY = Px((data.y - minY) / spaceY) * (Px(height.toFloat()) - chartSpaceStart.toPx(context)) + yAxisPadding.toPx(context)
+                val startY = Px(1 - (data.y - minY) / spaceY) * (Px(height.toFloat()) - chartSpaceStart.toPx(context)) + yAxisPadding.toPx(context)
                 val endX = Px((next.x - minX) / spaceX) * (Px(width.toFloat()) - chartSpaceStart.toPx(context)) + xAxisPadding.toPx(context)
-                val endY = Px((next.y - minY) / spaceY) * (Px(height.toFloat()) - chartSpaceStart.toPx(context)) + yAxisPadding.toPx(context)
+                val endY = Px(1 - (next.y - minY) / spaceY) * (Px(height.toFloat()) - chartSpaceStart.toPx(context)) + yAxisPadding.toPx(context)
                 Log.d("dataset", "$startX, $startY, $endX, $endY")
 
                 canvas.drawLine(startX.value, startY.value, endX.value, startY.value, paint)
