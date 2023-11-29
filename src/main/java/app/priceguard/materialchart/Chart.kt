@@ -40,8 +40,8 @@ class Chart @JvmOverloads constructor(
     var xAxisSpacing: Dp = Dp(32F)
     var yAxisSpacing: Dp = Dp(32F)
 
-    // Gridline: lines that are shown in axis with data labels
-    var halfGridLineLength: Dp = Dp(4F)
+    // Tick: lines that are shown in axis with data labels
+    var halfTickLength: Dp = Dp(4F)
 
     private val paint = Paint()
     private val xAxisPaint = Paint(paint)
@@ -76,10 +76,10 @@ class Chart @JvmOverloads constructor(
         // Calculate available axis space
         val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisPadding * Dp(2F)
 
-        // Calculate how much gridlines can be drawn (Based on spacing settings above)
+        // Calculate how much ticks can be drawn (Based on spacing settings above)
         val availableLabels = (availableSpace / xAxisSpacing).value.toInt()
 
-        // Calculate how much each gridlines should represent
+        // Calculate how much each ticks should represent
         val unit = roundToSecondSignificantDigit((maxValue - minValue) / availableLabels.toFloat())
 
         // Draw Axis
@@ -102,16 +102,16 @@ class Chart @JvmOverloads constructor(
             paint
         )
 
-        // Draw gridlines & labels
+        // Draw ticks & labels
         paint.strokeWidth = 2F
         paint.typeface = Typeface.DEFAULT
         paint.textSize = 24F
 
         (0.. availableLabels).forEach { idx ->
             val startPointX: Px = (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
-            val startPointY: Px = (axisStartPointY.toDp(context) - halfGridLineLength).toPx(context)
+            val startPointY: Px = (axisStartPointY.toDp(context) - halfTickLength).toPx(context)
             val endPointX: Px = (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
-            val endPointY: Px = (axisStartPointY.toDp(context) + halfGridLineLength).toPx(context)
+            val endPointY: Px = (axisStartPointY.toDp(context) + halfTickLength).toPx(context)
 
             canvas.drawLine(
                 startPointX.value,
@@ -134,7 +134,7 @@ class Chart @JvmOverloads constructor(
             val textHeight = Px(bounds.height().toFloat())
 
             val labelStartPointX: Px = (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat()) - (textWidth / Px(2F)).toDp(context)).toPx(context)
-            val labelStartPointY: Px = (axisStartPointY.toDp(context) + halfGridLineLength + Dp(8F) + textHeight.toDp(context)).toPx(context)
+            val labelStartPointY: Px = (axisStartPointY.toDp(context) + halfTickLength + Dp(8F) + textHeight.toDp(context)).toPx(context)
 
             canvas.drawText(labelString, labelStartPointX.value, labelStartPointY.value, paint)
         }
@@ -152,10 +152,10 @@ class Chart @JvmOverloads constructor(
         // Calculate available axis space
         val availableSpace: Dp = Px(height.toFloat()).toDp(context) - yAxisPadding * Dp(2F)
 
-        // Calculate how much gridlines can be drawn (Based on spacing settings above)
+        // Calculate how much ticks can be drawn (Based on spacing settings above)
         val availableLabels = (availableSpace / yAxisSpacing).value.toInt()
 
-        // Calculate how much each gridlines should represent
+        // Calculate how much each ticks should represent
         val unit = roundToSecondSignificantDigit((maxValue - minValue) / availableLabels.toFloat())
 
         // Draw Axis
@@ -178,15 +178,15 @@ class Chart @JvmOverloads constructor(
             paint
         )
 
-        // Draw gridlines & labels
+        // Draw ticks & labels
         paint.strokeWidth = 2F
         paint.typeface = Typeface.DEFAULT
         paint.textSize = 24F
 
         (1..availableLabels).forEach { idx ->
-            val startPointX: Px = (axisStartPointX.toDp(context) - halfGridLineLength).toPx(context)
+            val startPointX: Px = (axisStartPointX.toDp(context) - halfTickLength).toPx(context)
             val startPointY: Px = (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat())).toPx(context)
-            val endPointX: Px = (axisStartPointX.toDp(context) + halfGridLineLength).toPx(context)
+            val endPointX: Px = (axisStartPointX.toDp(context) + halfTickLength).toPx(context)
             val endPointY: Px = (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat())).toPx(context)
 
             canvas.drawLine(
@@ -209,7 +209,7 @@ class Chart @JvmOverloads constructor(
             val textWidth = Px(bounds.width().toFloat())
             val textHeight = Px(bounds.height().toFloat())
 
-            val labelStartPointX: Px = (axisStartPointX.toDp(context) - halfGridLineLength - Dp(8F) - textWidth.toDp(context)).toPx(context)
+            val labelStartPointX: Px = (axisStartPointX.toDp(context) - halfTickLength - Dp(8F) - textWidth.toDp(context)).toPx(context)
             val labelStartPointY: Px = (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat()) + textHeight.toDp(context) / Dp(2F)).toPx(context)
 
             canvas.drawText(labelString, labelStartPointX.value, labelStartPointY.value, paint)
