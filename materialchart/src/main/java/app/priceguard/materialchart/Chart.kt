@@ -105,7 +105,7 @@ class Chart @JvmOverloads constructor(
         val availableLabels = (availableSpace / xAxisSpacing).value.toInt()
 
         // Calculate how much each ticks should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / availableLabels.toFloat())
+        val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 1).toFloat())
 
         // Draw Axis
         val axisStartPointX: Px = xAxisPadding.toPx(context)
@@ -181,7 +181,7 @@ class Chart @JvmOverloads constructor(
         val availableLabels = (availableSpace / yAxisSpacing).value.toInt()
 
         // Calculate how much each ticks should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / availableLabels.toFloat())
+        val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 1).toFloat())
 
         // Draw Axis
         val axisStartPointX: Px = xAxisPadding.toPx(context)
