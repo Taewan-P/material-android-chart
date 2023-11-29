@@ -7,7 +7,6 @@ import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Shader.TileMode
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
 import app.priceguard.materialchart.data.ChartDataset
 import app.priceguard.materialchart.util.Dp
@@ -24,7 +23,6 @@ class Chart @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
-
     var dataset: ChartDataset? = null
 
     // Padding: Empty space from the view to the graph. This includes the other side as well (Like horizontal paddings & vertical paddings)
@@ -57,7 +55,6 @@ class Chart @JvmOverloads constructor(
     init {
         // TODO: 그래프 영역 선언, 캔버스 생성
         // New canvas
-
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -170,9 +167,7 @@ class Chart @JvmOverloads constructor(
             )
         }
 
-
         // TODO: Draw Y data labels
-
     }
 
     private fun drawLine(canvas: Canvas) {
@@ -201,15 +196,16 @@ class Chart @JvmOverloads constructor(
         val chartSpaceEndY = Px(height.toFloat()) - yAxisPadding.toPx(context) - Px(axisStrokeWidth)
 
         // 그라데이션 위치, 색상, 모드 설정
-        gradientPaint.shader = LinearGradient(
-            graphSpaceStartX.value,
-            graphSpaceStartY.value,
-            graphSpaceStartX.value,
-            chartSpaceEndY.value,
-            Color.RED,
-            Color.WHITE,
-            TileMode.CLAMP
-        )
+        gradientPaint.shader =
+            LinearGradient(
+                graphSpaceStartX.value,
+                graphSpaceStartY.value,
+                graphSpaceStartX.value,
+                chartSpaceEndY.value,
+                Color.RED,
+                Color.WHITE,
+                TileMode.CLAMP
+            )
 
         // 그래프 전체를 그라데이션으로 칠하기
         canvas.drawRect(
@@ -228,7 +224,6 @@ class Chart @JvmOverloads constructor(
         linesPaint.style = Paint.Style.FILL
         linesPaint.strokeWidth = 1F
         linesPaint.color = Color.RED
-
 
         chartData.forEachIndexed { index, data ->
             if (index < size - 1) {
@@ -255,5 +250,4 @@ class Chart @JvmOverloads constructor(
             }
         }
     }
-
 }
