@@ -65,6 +65,7 @@ class Chart @JvmOverloads constructor(
     // Tick: lines that are shown in axis with data labels
     var halfTickLength: Dp = Dp(4F)
     var gridLineStrokeWidth = 6f
+
     // ZeroDp: Delete Padding. 1dp for show lines in corners and edges
     var zeroDp = Dp(1F)
 
@@ -204,7 +205,9 @@ class Chart @JvmOverloads constructor(
         val availableLabels = when {
             availableLabelSpace.value <= 150F -> 3
             availableLabelSpace.value <= 250F -> 5
-            else -> {(availableLabelSpace / yAxisSpacing).value.toInt()}
+            else -> {
+                (availableLabelSpace / yAxisSpacing).value.toInt()
+            }
         }
 
         // Calculate how much each ticks should represent
@@ -269,7 +272,8 @@ class Chart @JvmOverloads constructor(
         (neededLabels - 1 downTo 1).forEach { idx ->
             val tickPointX: Px = maxPointX - actualSpacing.toPx(context) * Px(idx.toFloat())
 
-            val labelString = convertTimeStampToDate(maxValue - idx * unit, dataset?.graphMode ?: GraphMode.DAY)
+            val labelString =
+                convertTimeStampToDate(maxValue - idx * unit, dataset?.graphMode ?: GraphMode.DAY)
             if (tickPointX.value >= axisStartPointX.value) {
                 drawAxisTick(canvas, tickPointX, tickStartPointY, tickPointX, tickEndPointY, paint)
                 drawXAxisLabelText(canvas, labelString, tickPointX, tickEndPointY, Dp(8F), paint)
@@ -278,7 +282,7 @@ class Chart @JvmOverloads constructor(
     }
 
     private fun drawYAxis(canvas: Canvas, paint: Paint) {
-        if (dataset == null) return
+        dataset ?: return
 
         // Get chart data & max/min value
         val chartData = dataset?.data ?: return
@@ -305,7 +309,9 @@ class Chart @JvmOverloads constructor(
         val availableLabels = when {
             availableLabelSpace.value <= 150F -> 3
             availableLabelSpace.value <= 250F -> 5
-            else -> {(availableLabelSpace / yAxisSpacing).value.toInt()}
+            else -> {
+                (availableLabelSpace / yAxisSpacing).value.toInt()
+            }
         }
 
         val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
@@ -369,7 +375,14 @@ class Chart @JvmOverloads constructor(
 
             if (tickPointY.value >= maxPointY.value) {
                 drawAxisTick(canvas, tickStartPointX, tickPointY, tickEndPointX, tickPointY, paint)
-                drawYAxisLabelText(canvas, minValue + unit * idx, tickStartPointX, tickPointY, Dp(8F), paint)
+                drawYAxisLabelText(
+                    canvas,
+                    minValue + unit * idx,
+                    tickStartPointX,
+                    tickPointY,
+                    Dp(8F),
+                    paint
+                )
             }
         }
     }
@@ -436,7 +449,7 @@ class Chart @JvmOverloads constructor(
     }
 
     private fun drawLine(canvas: Canvas) {
-        if (dataset == null) return
+        dataset ?: return
 
         val chartData = dataset?.data!!
         val size = chartData.size
@@ -446,8 +459,8 @@ class Chart @JvmOverloads constructor(
         val maxY = chartData.maxOf { it.y }
         val minY = chartData.minOf { it.y }
 
-        val spaceX = if(maxX - minX > 0) maxX - minX else maxX
-        val spaceY = if(maxY - minY > 0) maxY - minY else maxY
+        val spaceX = if (maxX - minX > 0) maxX - minX else maxX
+        val spaceY = if (maxY - minY > 0) maxY - minY else maxY
 
         val graphSpaceStartX = calculateXAxisFirstTick()
         val graphSpaceEndX = calculateXAxisLastTick()
@@ -489,7 +502,6 @@ class Chart @JvmOverloads constructor(
         // Set lines paint
         linesPaint.style = Paint.Style.FILL
         linesPaint.strokeWidth = 6F
-        linesPaint.color = colorPrimary
 
         chartData.forEachIndexed { index, data ->
             if (index < size - 1) {
@@ -517,6 +529,11 @@ class Chart @JvmOverloads constructor(
         chartData.forEachIndexed { index, data ->
             if (index < size - 1) {
                 val next = chartData[index + 1]
+                linesPaint.color = if (data.valid) {
+                    colorPrimary
+                } else {
+                    colorError
+                }
 
                 // Calculate position of each data
                 val startX = Px((data.x - minX) / spaceX) * graphWidth + graphSpaceStartX
@@ -531,7 +548,7 @@ class Chart @JvmOverloads constructor(
     }
 
     private fun drawPointAndLabel(canvas: Canvas) {
-        if (dataset == null) return
+        dataset ?: return
 
         val chartData = dataset?.data!!
         val size = chartData.size
@@ -541,8 +558,16 @@ class Chart @JvmOverloads constructor(
         val maxY = chartData.maxOf { it.y }
         val minY = chartData.minOf { it.y }
 
-        val spaceX = if(maxX - minX > 0) maxX - minX else maxX
-        val spaceY = if(maxY - minY > 0) maxY - minY else maxY
+        val spaceX = if (maxX - minX > 0) {
+            maxX - minX
+        } else {
+            maxX
+        }
+        val spaceY = if (maxY - minY > 0) {
+            maxY - minY
+        } else {
+            maxY
+        }
 
         val graphSpaceStartX = calculateXAxisFirstTick()
         val graphSpaceEndX = calculateXAxisLastTick()
@@ -604,7 +629,11 @@ class Chart @JvmOverloads constructor(
     }
 
     private fun convertToText(num: Float): String {
-        return if (num.toInt().toFloat() == num) num.toInt().toString() else num.toString()
+        return if (num.toInt().toFloat() == num) {
+            num.toInt().toString()
+        } else {
+            num.toString()
+        }
     }
 
     private fun calculateXAxisFirstTick(): Px {
@@ -615,6 +644,7 @@ class Chart @JvmOverloads constructor(
         val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
         return (xAxisMargin + availableSpace - xAxisPadding).toPx(context)
     }
+
     private fun calculateYAxisFirstAndLastTick(): Pair<Px, Px> {
         val chartData = dataset?.data!!
 
@@ -684,7 +714,7 @@ class Chart @JvmOverloads constructor(
         }
         return true
     }
-    
+
     private fun drawGridLine(canvas: Canvas, paint: Paint) {
 
         // Get chart data & max/min value
@@ -695,7 +725,8 @@ class Chart @JvmOverloads constructor(
         val spaceY = maxY - minY
 
         val graphSpaceStartY = yAxisMargin.toPx(context) + yGraphPadding.toPx(context)
-        val graphSpaceEndY = Px(height.toFloat()) - yAxisMargin.toPx(context) - yGraphPadding.toPx(context)
+        val graphSpaceEndY =
+            Px(height.toFloat()) - yAxisMargin.toPx(context) - yGraphPadding.toPx(context)
 
         val graphHeight = graphSpaceEndY - graphSpaceStartY
 
@@ -703,9 +734,12 @@ class Chart @JvmOverloads constructor(
         val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
 
         //Draw GridLines
-        dataset?.gridLines?.sortedBy{ it.value * -1 }?.forEach { data ->
-            val lineHeight: Px = Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
-            if (minY > data.value || data.value > maxY) return@forEach
+        dataset?.gridLines?.sortedBy { it.value * -1 }?.forEach { data ->
+            val lineHeight: Px =
+                Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
+            if (minY > data.value || data.value > maxY) {
+                return@forEach
+            }
             val axisStartPointX: Px = (xAxisMargin).toPx(context)
             val axisEndPointX: Px = (xAxisMargin + availableSpace).toPx(context)
 
