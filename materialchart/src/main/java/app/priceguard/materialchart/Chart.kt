@@ -700,7 +700,7 @@ class Chart @JvmOverloads constructor(
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (dataset?.isInteractive != true) {
-            return true
+            return false
         }
         when (event?.action) {
             MotionEvent.ACTION_DOWN -> {
@@ -719,7 +719,7 @@ class Chart @JvmOverloads constructor(
                 invalidate()
             }
         }
-        return true
+        return false
     }
 
     private fun drawGridLine(canvas: Canvas, paint: Paint) {
