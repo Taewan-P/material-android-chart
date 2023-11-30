@@ -719,7 +719,7 @@ class Chart @JvmOverloads constructor(
                 invalidate()
             }
         }
-        return false
+        return true
     }
 
     private fun drawGridLine(canvas: Canvas, paint: Paint) {
