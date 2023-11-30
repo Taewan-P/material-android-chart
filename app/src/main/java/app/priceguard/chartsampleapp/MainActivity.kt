@@ -1,13 +1,9 @@
 package app.priceguard.chartsampleapp
 
-import android.graphics.Color
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import android.util.TypedValue
+import androidx.appcompat.app.AppCompatActivity
 import app.priceguard.materialchart.Chart
 import app.priceguard.materialchart.data.GraphMode
-import java.lang.String
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,7 +14,6 @@ class MainActivity : AppCompatActivity() {
         chart1.dataset = ExampleDataset(
             showXAxis = false,
             showYAxis = false,
-            touchListener = { v, _ -> v.performClick() },
             graphMode = GraphMode.DAY,
             data = listOf(
                 ExampleData(1F, 10F),
@@ -28,7 +23,8 @@ class MainActivity : AppCompatActivity() {
                 ExampleData(5F, 8F),
                 ExampleData(6F, 4F),
                 ExampleData(7F, 2F),
-                ExampleData(8F, 8F)
+                ExampleData(8F, 8F),
+                ExampleData(9F, 8F)
             ),
             gridLines = listOf(ExampleGridLine("목표가", -1f), ExampleGridLine("역대최저가", 1f))
         )
@@ -37,7 +33,6 @@ class MainActivity : AppCompatActivity() {
         chart2.dataset = ExampleDataset(
             showXAxis = true,
             showYAxis = true,
-            touchListener = { v, _ -> v.performClick() },
             graphMode = GraphMode.DAY,
             data = listOf(
                 ExampleData( 1638265200.toFloat(), 10F),

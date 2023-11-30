@@ -39,6 +39,8 @@
         <item name="colorError">?attr/colorError</item>
         <item name="colorSurface">?attr/colorSurface</item>
         <item name="colorOnSurface">?attr/colorOnSurface</item>
+        <item name="colorPrimaryContainer">?attr/colorPrimaryContainer</item>
+        <item name="colorOnPrimaryContainer">?attr/colorOnPrimaryContainer</item>
     </style>
 
     <style name="ExampleChartThemeAlternative">
@@ -47,5 +49,7 @@
         <item name="colorError">?attr/colorError</item>
         <item name="colorSurface">?attr/colorSurface</item>
         <item name="colorOnSurface">?attr/colorOnSurface</item>
+        <item name="colorPrimaryContainer">?attr/colorTertiaryContainer</item>
+        <item name="colorOnPrimaryContainer">?attr/colorOnTertiaryContainer</item>
     </style>
 </resources>

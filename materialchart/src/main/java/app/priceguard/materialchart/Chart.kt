@@ -7,10 +7,11 @@ import android.graphics.DashPathEffect
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.Shader.TileMode
 import android.graphics.Typeface
 import android.util.AttributeSet
-import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import androidx.core.graphics.ColorUtils
 import app.priceguard.materialchart.data.ChartDataset
@@ -60,11 +61,15 @@ class Chart @JvmOverloads constructor(
     var yAxisSpacing: Dp = Dp(32F)
 
     var axisStrokeWidth = 3f
+
     // Tick: lines that are shown in axis with data labels
     var halfTickLength: Dp = Dp(4F)
     var gridLineStrokeWidth = 6f
     // ZeroDp: Delete Padding. 1dp for show lines in corners and edges
     var zeroDp = Dp(1F)
+
+    private var pointX = 0f
+    private var isDragging = false
 
     // Use Android theme
     private var colorPrimary: Int
@@ -72,6 +77,8 @@ class Chart @JvmOverloads constructor(
     private var colorError: Int
     private var colorSurface: Int
     private var colorOnSurface: Int
+    private var colorPrimaryContainer: Int
+    private var colorOnPrimaryContainer: Int
 
     private val paint = Paint()
     private val xAxisPaint = Paint(paint)
@@ -79,6 +86,9 @@ class Chart @JvmOverloads constructor(
     private val linesPaint = Paint(paint)
     private val gradientPaint = Paint(paint)
     private val gradientCoverPaint = Paint(paint)
+    private val circlePaint = Paint(paint)
+    private val textLabelPaint = Paint(paint)
+    private val textRectPaint = Paint(paint)
     private val gridLinePaint = Paint(paint)
 
     private val bounds = Rect()
@@ -116,6 +126,16 @@ class Chart @JvmOverloads constructor(
             Color.BLACK
         )
 
+        colorPrimaryContainer = typedArray.getColor(
+            R.styleable.Chart_colorPrimaryContainer,
+            Color.BLACK
+        )
+
+        colorOnPrimaryContainer = typedArray.getColor(
+            R.styleable.Chart_colorOnPrimaryContainer,
+            Color.WHITE
+        )
+
         setBackgroundColor(colorSurface)
 
         typedArray.recycle()
@@ -149,10 +169,15 @@ class Chart @JvmOverloads constructor(
             drawYAxis(canvas, yAxisPaint)
             drawXAxis(canvas, xAxisPaint)
         }
+        drawLine(canvas)
+
+        if (isDragging) {
+            drawPointAndLabel(canvas)
+        }
     }
 
     private fun drawXAxis(canvas: Canvas, paint: Paint) {
-        if(dataset == null) return
+        if (dataset == null) return
 
         // Get chart data & max/min value
         val chartData = dataset?.data ?: return
@@ -253,7 +278,7 @@ class Chart @JvmOverloads constructor(
     }
 
     private fun drawYAxis(canvas: Canvas, paint: Paint) {
-        if(dataset == null) return
+        if (dataset == null) return
 
         // Get chart data & max/min value
         val chartData = dataset?.data ?: return
@@ -283,7 +308,6 @@ class Chart @JvmOverloads constructor(
             else -> {(availableLabelSpace / yAxisSpacing).value.toInt()}
         }
 
-        // Calculate how much each ticks should represent
         val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
 
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
@@ -422,46 +446,47 @@ class Chart @JvmOverloads constructor(
         val maxY = chartData.maxOf { it.y }
         val minY = chartData.minOf { it.y }
 
-        val spaceX = maxX - minX
-        val spaceY = maxY - minY
+        val spaceX = if(maxX - minX > 0) maxX - minX else maxX
+        val spaceY = if(maxY - minY > 0) maxY - minY else maxY
 
-        // 축과 그래프 사이 빈틈 제거 위해 spaceStart 1f 빼기
-        val graphSpaceStartX = xAxisMargin.toPx(context) + Px(axisStrokeWidth) - Px(1f)
-        val graphSpaceEndX = Px(width.toFloat()) - xAxisMargin.toPx(context) - xGraphPadding.toPx(context)
-        val graphSpaceStartY = yAxisMargin.toPx(context) + yGraphPadding.toPx(context) - Px(1f)
-        val graphSpaceEndY = Px(height.toFloat()) - yAxisMargin.toPx(context) - yGraphPadding.toPx(context)
+        val graphSpaceStartX = calculateXAxisFirstTick()
+        val graphSpaceEndX = calculateXAxisLastTick()
+        val graphSpaceStartY = calculateYAxisFirstAndLastTick().second
+        val graphSpaceEndY = calculateYAxisFirstAndLastTick().first
+
+        val gradationEndY = Px(height.toFloat()) - yAxisMargin.toPx(context)
 
         val graphWidth = graphSpaceEndX - graphSpaceStartX
         val graphHeight = graphSpaceEndY - graphSpaceStartY
 
         val chartSpaceEndY = Px(height.toFloat()) - yAxisMargin.toPx(context) - Px(axisStrokeWidth)
 
-        // 그라데이션 위치, 색상, 모드 설정
+        // Set gradation position, color, mode
         gradientPaint.shader =
             LinearGradient(
                 graphSpaceStartX.value,
                 graphSpaceStartY.value,
                 graphSpaceStartX.value,
-                chartSpaceEndY.value,
+                gradationEndY.value,
                 ColorUtils.setAlphaComponent(colorPrimary, 180),
                 Color.TRANSPARENT,
                 TileMode.CLAMP
             )
 
-        // 그래프 전체를 그라데이션으로 칠하기
+        // Fill gradation
         canvas.drawRect(
             graphSpaceStartX.value,
-            graphSpaceStartY.value,
+            graphSpaceStartY.value + 1f,
             graphSpaceEndX.value,
             chartSpaceEndY.value,
             gradientPaint
         )
 
-        // 그라데이션이 필요 없는 부분을 덮어버리는 paint 설정
+        // Set gradation cover paint
         gradientCoverPaint.style = Paint.Style.FILL
         gradientCoverPaint.color = colorSurface
 
-        // 선 그리는 paint 설정
+        // Set lines paint
         linesPaint.style = Paint.Style.FILL
         linesPaint.strokeWidth = 6F
         linesPaint.color = colorPrimary
@@ -470,17 +495,16 @@ class Chart @JvmOverloads constructor(
             if (index < size - 1) {
                 val next = chartData[index + 1]
 
-                // 각 데이터를 그릴 시작과 끝 위치 계산
+                // Calculate position of each data
                 val startX = Px((data.x - minX) / spaceX) * graphWidth + graphSpaceStartX
                 val startY = Px(1 - (data.y - minY) / spaceY) * graphHeight + graphSpaceStartY
                 val endX = Px((next.x - minX) / spaceX) * graphWidth + graphSpaceStartX
-                val endY = Px(1 - (next.y - minY) / spaceY) * graphHeight + graphSpaceStartY
 
-                // 그라데이션 필요 없는 부분 덮어버리기 ( Rect 사이로 그라데이션이 보이는 걸 방지하기 위해 endX 1f 값 더함)
+                // Hide the area that doesn't require a gradation
                 canvas.drawRect(
-                    startX.value,
-                    graphSpaceStartY.value,
-                    endX.value + 1f,
+                    startX.value - 1F,
+                    0F,
+                    endX.value + 1F,
                     startY.value,
                     gradientCoverPaint
                 )
@@ -494,17 +518,122 @@ class Chart @JvmOverloads constructor(
             if (index < size - 1) {
                 val next = chartData[index + 1]
 
-                // 각 데이터를 그릴 시작과 끝 위치 계산
+                // Calculate position of each data
                 val startX = Px((data.x - minX) / spaceX) * graphWidth + graphSpaceStartX
                 val startY = Px(1 - (data.y - minY) / spaceY) * graphHeight + graphSpaceStartY
                 val endX = Px((next.x - minX) / spaceX) * graphWidth + graphSpaceStartX
                 val endY = Px(1 - (next.y - minY) / spaceY) * graphHeight + graphSpaceStartY
 
-                // 그래프 선 그리기
                 canvas.drawLine(startX.value, startY.value, endX.value, startY.value, linesPaint)
                 canvas.drawLine(endX.value, startY.value, endX.value, endY.value, linesPaint)
             }
         }
+    }
+
+    private fun drawPointAndLabel(canvas: Canvas) {
+        if (dataset == null) return
+
+        val chartData = dataset?.data!!
+        val size = chartData.size
+
+        val maxX = chartData.maxOf { it.x }
+        val minX = chartData.minOf { it.x }
+        val maxY = chartData.maxOf { it.y }
+        val minY = chartData.minOf { it.y }
+
+        val spaceX = if(maxX - minX > 0) maxX - minX else maxX
+        val spaceY = if(maxY - minY > 0) maxY - minY else maxY
+
+        val graphSpaceStartX = calculateXAxisFirstTick()
+        val graphSpaceEndX = calculateXAxisLastTick()
+        val graphSpaceStartY = calculateYAxisFirstAndLastTick().second
+        val graphSpaceEndY = calculateYAxisFirstAndLastTick().first
+
+        val graphWidth = graphSpaceEndX - graphSpaceStartX
+        val graphHeight = graphSpaceEndY - graphSpaceStartY
+
+        chartData.forEachIndexed { index, data ->
+            if (index < size - 1) {
+                val next = chartData[index + 1]
+
+                // Calculate position of each data
+                val startX = Px((data.x - minX) / spaceX) * graphWidth + graphSpaceStartX
+                val startY = Px(1 - (data.y - minY) / spaceY) * graphHeight + graphSpaceStartY
+                val endX = Px((next.x - minX) / spaceX) * graphWidth + graphSpaceStartX
+
+                val circleSize = Dp(8f).toPx(context)
+                if (startX.value < pointX && endX.value > pointX) {
+
+                    circlePaint.style = Paint.Style.FILL
+                    circlePaint.color = colorPrimary
+                    canvas.drawCircle(pointX, startY.value, circleSize.value / 2, circlePaint)
+
+                    val text = convertToText(data.y)
+
+                    textLabelPaint.typeface = Typeface.DEFAULT
+                    textLabelPaint.textSize = 48F
+                    textLabelPaint.color = colorOnPrimaryContainer
+                    textLabelPaint.getTextBounds(text, 0, text.length, bounds)
+
+                    val labelRectPaddingVertical = Dp(8F).toPx(context)
+                    val labelRectPaddingHorizontal = Dp(8F).toPx(context)
+                    val distanceTextAndPoint = circleSize + Dp(8F).toPx(context)
+
+                    val rectWidth = bounds.width()
+                    val rectHeight = bounds.height()
+                    val rect = RectF(
+                        pointX - rectWidth / 2 - labelRectPaddingHorizontal.value,
+                        startY.value - rectHeight - distanceTextAndPoint.value - labelRectPaddingVertical.value,
+                        pointX + rectWidth / 2 + labelRectPaddingHorizontal.value,
+                        startY.value - distanceTextAndPoint.value + labelRectPaddingVertical.value
+                    )
+
+                    textRectPaint.color = colorPrimaryContainer
+
+                    canvas.drawRoundRect(rect, 10f, 10f, textRectPaint)
+                    canvas.drawText(
+                        text,
+                        pointX - bounds.width() / 2 - 4F,
+                        startY.value - distanceTextAndPoint.value,
+                        textLabelPaint
+                    )
+                }
+            }
+        }
+
+    }
+
+    private fun convertToText(num: Float): String {
+        return if (num.toInt().toFloat() == num) num.toInt().toString() else num.toString()
+    }
+
+    private fun calculateXAxisFirstTick(): Px {
+        return xAxisMargin.toPx(context)
+    }
+
+    private fun calculateXAxisLastTick(): Px {
+        val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
+        return (xAxisMargin + availableSpace - xAxisPadding).toPx(context)
+    }
+    private fun calculateYAxisFirstAndLastTick(): Pair<Px, Px> {
+        val chartData = dataset?.data!!
+
+        val maxY = chartData.maxOf { it.y }
+        val minY = chartData.minOf { it.y }
+
+        val availableSpace: Dp = Px(height.toFloat()).toDp(context) - yAxisMargin * Dp(2F)
+        val axisStartPointY: Px = (yAxisMargin + availableSpace).toPx(context)
+        val axisEndPointY: Px = yAxisMargin.toPx(context)
+
+        val minPointY: Px = (axisStartPointY.toDp(context) - yAxisPadding / Dp(2F)).toPx(context)
+        val maxPointY: Px = (axisEndPointY.toDp(context) + yAxisPadding / Dp(2F)).toPx(context)
+
+        if (maxY == minY) {
+            val middlePointY = (minPointY + maxPointY) / Px(2F)
+            return Pair(middlePointY, middlePointY)
+        }
+
+        return Pair(minPointY, maxPointY)
     }
 
     private fun convertTimeStampToDate(timestamp: Float, mode: GraphMode): String {
@@ -537,6 +666,25 @@ class Chart @JvmOverloads constructor(
         return result
     }
 
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        when (event?.action) {
+            MotionEvent.ACTION_DOWN -> {
+                isDragging = true
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                pointX = event.x
+                invalidate()
+            }
+
+            MotionEvent.ACTION_UP -> {
+                isDragging = false
+                invalidate()
+            }
+        }
+        return true
+    }
+    
     private fun drawGridLine(canvas: Canvas, paint: Paint) {
 
         // Get chart data & max/min value
