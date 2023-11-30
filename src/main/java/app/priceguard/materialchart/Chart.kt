@@ -729,9 +729,8 @@ class Chart @JvmOverloads constructor(
         val minY = chartData.minOf { it.y }
         val spaceY = maxY - minY
 
-        val graphSpaceStartY = yAxisMargin.toPx(context) + yGraphPadding.toPx(context)
-        val graphSpaceEndY =
-            Px(height.toFloat()) - yAxisMargin.toPx(context) - yGraphPadding.toPx(context)
+        val graphSpaceStartY = calculateYAxisFirstAndLastTick().second
+        val graphSpaceEndY = calculateYAxisFirstAndLastTick().first
 
         val graphHeight = graphSpaceEndY - graphSpaceStartY
 
