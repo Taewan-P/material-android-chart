@@ -42,12 +42,12 @@ class Chart @JvmOverloads constructor(
         set(value) {
             field = value
             if(value?.showXAxis == false){
-                xAxisMargin = zeroDp
-                xGraphPadding = zeroDp
-            }
-            if(value?.showYAxis == false) {
                 yAxisMargin = zeroDp
                 yGraphPadding = zeroDp
+            }
+            if(value?.showYAxis == false) {
+                xAxisMargin = zeroDp
+                xGraphPadding = zeroDp
             }
             invalidate()
         }
