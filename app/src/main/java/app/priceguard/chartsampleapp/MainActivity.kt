@@ -46,7 +46,7 @@ class MainActivity : AppCompatActivity() {
                 ExampleData(1638308400.toFloat(), 2F, false),
                 ExampleData(1638315600.toFloat(), 8F, true)
             ),
-            gridLines = listOf(ExampleGridLine("목표가", -1f), ExampleGridLine("역대최저가", 11f))
+            gridLines = listOf(ExampleGridLine("목표가", -1f), ExampleGridLine("역대최저가", 2f))
         )
     }
 }
