@@ -10,6 +10,7 @@ import android.graphics.Rect
 import android.graphics.Shader.TileMode
 import android.graphics.Typeface
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import androidx.core.graphics.ColorUtils
 import app.priceguard.materialchart.data.ChartDataset
@@ -465,7 +466,7 @@ class Chart @JvmOverloads constructor(
         val minY = chartData.minOf { it.y }
         val spaceY = maxY - minY
 
-        val graphSpaceStartY = yAxisMargin.toPx(context) + yGraphPadding.toPx(context) - Px(1f)
+        val graphSpaceStartY = yAxisMargin.toPx(context) + yGraphPadding.toPx(context)
         val graphSpaceEndY = Px(height.toFloat()) - yAxisMargin.toPx(context) - yGraphPadding.toPx(context)
 
         val graphHeight = graphSpaceEndY - graphSpaceStartY
@@ -474,9 +475,9 @@ class Chart @JvmOverloads constructor(
         val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
 
         //Draw GridLines
-        dataset?.gridLines?.forEach { data ->
-            val height: Px = Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
-            if (height.value < graphSpaceStartY.value || height.value > graphSpaceEndY.value) return@forEach
+        dataset?.gridLines?.sortedBy{ it.value * -1 }?.forEach { data ->
+            val lineHeight: Px = Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
+            if (minY > data.value || data.value > maxY) return@forEach
             val axisStartPointX: Px = (xAxisMargin).toPx(context)
             val axisEndPointX: Px = (xAxisMargin + availableSpace).toPx(context)
 
@@ -489,9 +490,9 @@ class Chart @JvmOverloads constructor(
 
             canvas.drawLine(
                 axisStartPointX.value,
-                height.value,
+                lineHeight.value,
                 axisEndPointX.value,
-                height.value,
+                lineHeight.value,
                 paint
             )
 
@@ -509,7 +510,7 @@ class Chart @JvmOverloads constructor(
             val textHeight = Px(bounds.height().toFloat())
 
             val labelStartPointX: Px = axisEndPointX - textWidth
-            val labelStartPointY: Px = height - textHeight
+            val labelStartPointY: Px = lineHeight - textHeight
 
             canvas.drawText(data.name, labelStartPointX.value, labelStartPointY.value, paint)
         }
