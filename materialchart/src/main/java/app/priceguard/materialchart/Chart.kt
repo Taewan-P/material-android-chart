@@ -10,7 +10,6 @@ import android.graphics.RectF
 import android.graphics.Shader.TileMode
 import android.graphics.Typeface
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import androidx.core.graphics.ColorUtils
@@ -361,11 +360,12 @@ class Chart @JvmOverloads constructor(
         val spaceY = if(maxY - minY > 0) maxY - minY else maxY
 
 
-        // 축과 그래프 사이 빈틈 제거 위해 spaceStart 1f 빼기
-        val graphSpaceStartX = xAxisMargin.toPx(context) + Px(axisStrokeWidth) - Px(1f)
-        val graphSpaceEndX = Px(width.toFloat()) - xAxisMargin.toPx(context) - xGraphPadding.toPx(context)
-        val graphSpaceStartY = yAxisMargin.toPx(context) + yGraphPadding.toPx(context) - Px(1f)
-        val graphSpaceEndY = Px(height.toFloat()) - yAxisMargin.toPx(context) - yGraphPadding.toPx(context)
+        val graphSpaceStartX = calculateXAxisFirstTick()
+        val graphSpaceEndX = calculateXAxisLastTick()
+        val graphSpaceStartY = calculateYAxisLastTick()
+        val graphSpaceEndY = calculateYAxisFirstTick()
+
+        val gradationEndY = Px(height.toFloat()) - yAxisMargin.toPx(context)
 
         val graphWidth = graphSpaceEndX - graphSpaceStartX
         val graphHeight = graphSpaceEndY - graphSpaceStartY
@@ -378,7 +378,7 @@ class Chart @JvmOverloads constructor(
                 graphSpaceStartX.value,
                 graphSpaceStartY.value,
                 graphSpaceStartX.value,
-                chartSpaceEndY.value,
+                gradationEndY.value,
                 ColorUtils.setAlphaComponent(colorPrimary, 180),
                 Color.TRANSPARENT,
                 TileMode.CLAMP
@@ -387,7 +387,7 @@ class Chart @JvmOverloads constructor(
         // 그래프 전체를 그라데이션으로 칠하기
         canvas.drawRect(
             graphSpaceStartX.value,
-            graphSpaceStartY.value,
+            graphSpaceStartY.value + 1f,
             graphSpaceEndX.value,
             chartSpaceEndY.value,
             gradientPaint
@@ -410,7 +410,6 @@ class Chart @JvmOverloads constructor(
                 val startX = Px((data.x - minX) / spaceX) * graphWidth + graphSpaceStartX
                 val startY = Px(1 - (data.y - minY) / spaceY) * graphHeight + graphSpaceStartY
                 val endX = Px((next.x - minX) / spaceX) * graphWidth + graphSpaceStartX
-                val endY = Px(1 - (next.y - minY) / spaceY) * graphHeight + graphSpaceStartY
 
                 // 그라데이션 필요 없는 부분 덮어버리기 ( Rect 사이로 그라데이션이 보이는 걸 방지하기 위해 endX 1f 값 더함)
                 canvas.drawRect(
@@ -454,16 +453,13 @@ class Chart @JvmOverloads constructor(
         val maxY = chartData.maxOf { it.y }
         val minY = chartData.minOf { it.y }
 
-        val spaceX = if(maxX - minX <= 0) maxX - minX else maxX
-        val spaceY = if(maxY - minY <= 0) maxY - minY else maxY
+        val spaceX = if(maxX - minX > 0) maxX - minX else maxX
+        val spaceY = if(maxY - minY > 0) maxY - minY else maxY
 
-        // 축과 그래프 사이 빈틈 제거 위해 spaceStart 1f 빼기
-        val graphSpaceStartX = xAxisPadding.toPx(context) + Px(axisStrokeWidth) - Px(1f)
-        val graphSpaceEndX =
-            Px(width.toFloat()) - xAxisPadding.toPx(context) - xGraphPadding.toPx(context)
-        val graphSpaceStartY = yAxisPadding.toPx(context) + yGraphPadding.toPx(context) - Px(1f)
-        val graphSpaceEndY =
-            Px(height.toFloat()) - yAxisPadding.toPx(context) - yGraphPadding.toPx(context)
+        val graphSpaceStartX = calculateXAxisFirstTick()
+        val graphSpaceEndX = calculateXAxisLastTick()
+        val graphSpaceStartY = calculateYAxisLastTick()
+        val graphSpaceEndY = calculateYAxisFirstTick()
 
         val graphWidth = graphSpaceEndX - graphSpaceStartX
         val graphHeight = graphSpaceEndY - graphSpaceStartY
@@ -477,16 +473,11 @@ class Chart @JvmOverloads constructor(
                 val startY = Px(1 - (data.y - minY) / spaceY) * graphHeight + graphSpaceStartY
                 val endX = Px((next.x - minX) / spaceX) * graphWidth + graphSpaceStartX
 
-                val circleSize = 40f
+                val circleSize = Dp(8f).toPx(context).value
                 if (startX.value < pointX && endX.value > pointX) {
 
                     circlePaint.style = Paint.Style.FILL
-                    circlePaint.color = Color.WHITE
-                    canvas.drawCircle(pointX, startY.value, circleSize / 2, circlePaint)
-
-                    circlePaint.style = Paint.Style.STROKE
-                    circlePaint.color = Color.BLACK
-                    circlePaint.strokeWidth = 2f
+                    circlePaint.color = colorPrimary
                     canvas.drawCircle(pointX, startY.value, circleSize / 2, circlePaint)
 
                     val text = data.y.toString()
@@ -523,6 +514,25 @@ class Chart @JvmOverloads constructor(
         }
 
     }
+    private fun calculateXAxisFirstTick(): Px {
+        return xAxisMargin.toPx(context)
+    }
+
+    private fun calculateXAxisLastTick(): Px {
+        val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
+        return (xAxisMargin + availableSpace - xAxisPadding).toPx(context)
+    }
+    private fun calculateYAxisLastTick(): Px {
+        val axisEndPointY: Px = yAxisMargin.toPx(context)
+        return (axisEndPointY.toDp(context) + yAxisPadding / Dp(2F)).toPx(context)
+    }
+
+    private fun calculateYAxisFirstTick(): Px {
+        val availableSpace: Dp = Px(height.toFloat()).toDp(context) - yAxisMargin * Dp(2F)
+        val axisStartPointY: Px = (yAxisMargin + availableSpace).toPx(context)
+        return (axisStartPointY.toDp(context) - yAxisPadding / Dp(2F)).toPx(context)
+    }
+
 
     private fun roundToSecondSignificantDigit(number: Float): Float {
         if (number == 0F) {
