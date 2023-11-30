@@ -21,7 +21,8 @@ class MainActivity : AppCompatActivity() {
                 ExampleData(5F, 8F),
                 ExampleData(6F, 4F),
                 ExampleData(7F, 2F),
-                ExampleData(8F, 8F)
+                ExampleData(8F, 8F),
+                ExampleData(9F, 8F)
             )
         )
 
@@ -29,7 +30,6 @@ class MainActivity : AppCompatActivity() {
         chart2.dataset = ExampleDataset(
             showXAxis = true,
             showYAxis = true,
-            touchListener = { v, _ -> v.performClick() },
             data = listOf(
                 ExampleData(1F, 10F),
                 ExampleData(2F, 1F),
@@ -38,7 +38,8 @@ class MainActivity : AppCompatActivity() {
                 ExampleData(5F, 8F),
                 ExampleData(6F, 4F),
                 ExampleData(7F, 2F),
-                ExampleData(8F, 8F)
+                ExampleData(8F, 8F),
+                ExampleData(9F, 8F)
             )
         )
     }
