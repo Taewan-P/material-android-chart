@@ -41,12 +41,29 @@ class Chart @JvmOverloads constructor(
     var dataset: ChartDataset? = null
         set(value) {
             field = value
+            if(value?.showXAxis == false){
+                yAxisMargin = zeroDp
+                yGraphPadding = zeroDp
+            }
+            if(value?.showYAxis == false) {
+                xAxisMargin = zeroDp
+                xGraphPadding = zeroDp
+            }
             invalidate()
         }
 
     // Margin: Empty space from the view to the graph on the outside. This includes the other side as well (Like horizontal & vertical margins)
     var xAxisMargin: Dp = Dp(32F)
+        set(value) {
+            field = value
+            invalidate()
+        }
+
     var yAxisMargin: Dp = Dp(32F)
+        set(value) {
+            field = value
+            invalidate()
+        }
 
     // Padding: Empty space from the graph on the inside.
     var xAxisPadding: Dp = xAxisMargin / Dp(2F)
@@ -147,30 +164,16 @@ class Chart @JvmOverloads constructor(
         //drawLine() and DrawGridLine() must be call after margin set
         //and call before drawXAxis and drawYAxis be called
         dataset ?: return
-        if (dataset?.showXAxis == false && dataset?.showYAxis == false) {
-            xAxisMargin = zeroDp
-            xGraphPadding = zeroDp
-            yAxisMargin = zeroDp
-            yGraphPadding = zeroDp
-            drawLine(canvas)
-            drawGridLine(canvas, gridLinePaint)
-        } else if (dataset?.showXAxis == true && dataset?.showYAxis == false) {
-            xAxisMargin = zeroDp
-            drawLine(canvas)
-            drawGridLine(canvas, gridLinePaint)
-            drawXAxis(canvas, xAxisPaint)
-        } else if (dataset?.showXAxis == false && dataset?.showYAxis == true) {
-            yAxisMargin = zeroDp
-            drawLine(canvas)
-            drawGridLine(canvas, gridLinePaint)
-            drawYAxis(canvas, yAxisPaint)
-        } else {
-            drawLine(canvas)
-            drawGridLine(canvas, gridLinePaint)
-            drawYAxis(canvas, yAxisPaint)
+
+        drawLine(canvas)
+        drawGridLine(canvas, gridLinePaint)
+
+        if (dataset?.showXAxis == true) {
             drawXAxis(canvas, xAxisPaint)
         }
-
+        if (dataset?.showYAxis == true) {
+            drawYAxis(canvas, yAxisPaint)
+        }
         if (isDragging) {
             drawPointAndLabel(canvas)
         }
@@ -778,5 +781,13 @@ class Chart @JvmOverloads constructor(
 
             canvas.drawText(data.name, labelStartPointX.value, labelStartPointY.value, paint)
         }
+    }
+
+    fun setXAxisMargin(value: Float) {
+        xAxisMargin = Dp(value)
+    }
+
+    fun setYAxisMargin(value: Float) {
+        yAxisMargin = Dp(value)
     }
 }
