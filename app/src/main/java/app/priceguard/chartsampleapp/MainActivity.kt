@@ -14,6 +14,7 @@ class MainActivity : AppCompatActivity() {
         chart1.dataset = ExampleDataset(
             showXAxis = false,
             showYAxis = false,
+            isInteractive = false,
             graphMode = GraphMode.DAY,
             data = listOf(
                 ExampleData(1F, 10F, true),
@@ -33,6 +34,7 @@ class MainActivity : AppCompatActivity() {
         chart2.dataset = ExampleDataset(
             showXAxis = true,
             showYAxis = true,
+            isInteractive = true,
             graphMode = GraphMode.DAY,
             data = listOf(
                 ExampleData(1638265200.toFloat(), 10F, true),
