@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import app.priceguard.materialchart.Chart
 import app.priceguard.materialchart.data.GraphMode
-import java.lang.String
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -14,7 +13,7 @@ class MainActivity : AppCompatActivity() {
         val chart1 = findViewById<Chart>(R.id.example_chart_1)
         chart1.dataset = ExampleDataset(
             showXAxis = false,
-            showYAxis = false,\
+            showYAxis = false,
             graphMode = GraphMode.DAY,
             data = listOf(
                 ExampleData(1F, 10F),

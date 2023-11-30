@@ -1,6 +1,5 @@
 package app.priceguard.chartsampleapp
 
-import android.view.View
 import app.priceguard.materialchart.data.ChartData
 import app.priceguard.materialchart.data.ChartDataset
 import app.priceguard.materialchart.data.GraphMode
