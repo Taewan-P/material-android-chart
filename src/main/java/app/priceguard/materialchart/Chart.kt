@@ -500,6 +500,7 @@ class Chart @JvmOverloads constructor(
             paint.pathEffect = null
             paint.typeface = Typeface.DEFAULT
             paint.textSize = 24F
+            paint.color = colorOnSurface
 
             val labelString = data.name
 
