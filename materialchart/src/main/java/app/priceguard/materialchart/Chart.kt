@@ -5,11 +5,12 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Shader.TileMode
 import android.graphics.Rect
+import android.graphics.Shader.TileMode
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.graphics.ColorUtils
 import app.priceguard.materialchart.data.ChartDataset
 import app.priceguard.materialchart.util.Dp
 import app.priceguard.materialchart.util.Px
@@ -201,18 +202,26 @@ class Chart @JvmOverloads constructor(
         // Calculate axis space that labels are actually drawn
         val availableLabelSpace: Dp = availableSpace - yAxisPadding
 
-        // Calculate how much ticks can be drawn (Based on spacing settings above)
-        val availableLabels = (availableLabelSpace / yAxisSpacing).value.toInt()
+        // Number of ticks
+        // ~ 150dp : 3 (max, min, 50%)
+        // ~ 250dp : 5 (max, min, 25%, 50%, 75%)
+        // 250dp ~ : Auto
+        val availableLabels = when {
+            availableLabelSpace.value <= 150F -> 3
+            availableLabelSpace.value <= 250F -> 5
+            else -> {(availableLabelSpace / yAxisSpacing).value.toInt()}
+        }
 
         // Calculate how much each ticks should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / availableLabels.toFloat())
+        val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 1).toFloat())
+
+        val actualSpacing = availableLabelSpace * Dp(unit / (maxValue - minValue))
 
         // Calculate how much labels are actually needed & override spacing
-        val neededLabels = ((maxValue - minValue) / unit).toInt()
-        val actualSpacing = if (availableLabels > neededLabels) {
-            (availableLabelSpace / Dp(neededLabels.toFloat()))
+        val neededLabels = if (availableLabels <= 5) {
+            availableLabels
         } else {
-            yAxisSpacing
+            (availableLabelSpace / actualSpacing).value.roundToInt()
         }
 
         // Draw Axis
@@ -239,36 +248,71 @@ class Chart @JvmOverloads constructor(
         paint.strokeWidth = 2F
         paint.typeface = Typeface.DEFAULT
         paint.textSize = 24F
-      
-        (0..neededLabels).forEach { idx ->
-            val startPointX: Px = (axisStartPointX.toDp(context) - halfTickLength).toPx(context)
-            val startPointY: Px = (axisStartPointY.toDp(context) - (yAxisPadding / Dp(2F)) - actualSpacing * Dp(idx.toFloat())).toPx(context)
-            val endPointX: Px = (axisStartPointX.toDp(context) + halfTickLength).toPx(context)
 
-            canvas.drawLine(
-                startPointX.value,
-                startPointY.value,
-                endPointX.value,
-                startPointY.value,
-                paint
-            )
+        val tickStartPointX: Px = (axisStartPointX.toDp(context) - halfTickLength).toPx(context)
+        val tickEndPointX: Px = (axisStartPointX.toDp(context) + halfTickLength).toPx(context)
 
-            val label = maxValue - (unit * (neededLabels - idx).toFloat() * 100.0).roundToInt() / 100.0
-            val labelString = if (label - label.toInt() > 1e-6) {
-                String.format("%.1f", label)
-            } else {
-                label.toInt().toString()
+        // Draw min & max first
+        val minPointY: Px = (axisStartPointY.toDp(context) - yAxisPadding / Dp(2F)).toPx(context)
+        val maxPointY: Px = (axisEndPointY.toDp(context) + yAxisPadding / Dp(2F)).toPx(context)
+
+        drawAxisTick(canvas, tickStartPointX, minPointY, tickEndPointX, minPointY, paint)
+        drawAxisTick(canvas, tickStartPointX, maxPointY, tickEndPointX, maxPointY, paint)
+        drawYAxisLabelText(canvas, minValue, tickStartPointX, minPointY, Dp(8F), paint)
+        drawYAxisLabelText(canvas, maxValue, tickStartPointX, maxPointY, Dp(8F), paint)
+
+        // Draw remaining ticks
+        (1 until neededLabels).forEach { idx ->
+            val tickPointY: Px = minPointY - actualSpacing.toPx(context) * Px(idx.toFloat())
+
+            if (tickPointY.value >= maxPointY.value) {
+                drawAxisTick(canvas, tickStartPointX, tickPointY, tickEndPointX, tickPointY, paint)
+                drawYAxisLabelText(canvas, minValue + unit * idx, tickStartPointX, tickPointY, Dp(8F), paint)
             }
-
-            paint.getTextBounds(labelString, 0, labelString.length, bounds)
-            val textWidth = Px(bounds.width().toFloat())
-            val textHeight = Px(bounds.height().toFloat())
-
-            val labelStartPointX: Px = (axisStartPointX.toDp(context) - halfTickLength - Dp(8F) - textWidth.toDp(context)).toPx(context)
-            val labelStartPointY: Px = (axisStartPointY.toDp(context) - (yAxisPadding / Dp(2F)) - actualSpacing * Dp(idx.toFloat()) + textHeight.toDp(context) / Dp(2F)).toPx(context)
-
-            canvas.drawText(labelString, labelStartPointX.value, labelStartPointY.value, paint)
         }
+    }
+
+    private fun drawAxisTick(
+        canvas: Canvas,
+        tickStartX: Px,
+        tickStartY: Px,
+        tickEndX: Px,
+        tickEndY: Px,
+        paint: Paint
+    ) {
+        canvas.drawLine(
+            tickStartX.value,
+            tickStartY.value,
+            tickEndX.value,
+            tickEndY.value,
+            paint
+        )
+    }
+
+    private fun drawYAxisLabelText(
+        canvas: Canvas,
+        label: Float,
+        startPointX: Px,
+        startPointY: Px,
+        marginEnd: Dp,
+        paint: Paint
+    ) {
+        val labelString = if (label - label.toInt() > 1e-6) {
+            String.format("%.1f", label)
+        } else {
+            label.toInt().toString()
+        }
+
+        paint.getTextBounds(labelString, 0, labelString.length, bounds)
+        val textWidth = Px(bounds.width().toFloat())
+        val textHeight = Px(bounds.height().toFloat())
+
+        val labelStartPointX: Px =
+            (startPointX.toDp(context) - marginEnd - textWidth.toDp(context)).toPx(context)
+        val labelStartPointY: Px =
+            (startPointY.toDp(context) + textHeight.toDp(context) / Dp(2F)).toPx(context)
+
+        canvas.drawText(labelString, labelStartPointX.value, labelStartPointY.value, paint)
     }
 
     private fun drawLine(canvas: Canvas) {
@@ -303,7 +347,7 @@ class Chart @JvmOverloads constructor(
                 graphSpaceStartY.value,
                 graphSpaceStartX.value,
                 chartSpaceEndY.value,
-                colorPrimary,
+                ColorUtils.setAlphaComponent(colorPrimary, 180),
                 Color.TRANSPARENT,
                 TileMode.CLAMP
             )
@@ -323,7 +367,7 @@ class Chart @JvmOverloads constructor(
 
         // 선 그리는 paint 설정
         linesPaint.style = Paint.Style.FILL
-        linesPaint.strokeWidth = 1F
+        linesPaint.strokeWidth = 6F
         linesPaint.color = colorPrimary
 
         chartData.forEachIndexed { index, data ->
@@ -344,6 +388,21 @@ class Chart @JvmOverloads constructor(
                     startY.value,
                     gradientCoverPaint
                 )
+            }
+        }
+
+        linesPaint.strokeJoin = Paint.Join.ROUND
+        linesPaint.strokeCap = Paint.Cap.ROUND
+
+        chartData.forEachIndexed { index, data ->
+            if (index < size - 1) {
+                val next = chartData[index + 1]
+
+                // 각 데이터를 그릴 시작과 끝 위치 계산
+                val startX = Px((data.x - minX) / spaceX) * graphWidth + graphSpaceStartX
+                val startY = Px(1 - (data.y - minY) / spaceY) * graphHeight + graphSpaceStartY
+                val endX = Px((next.x - minX) / spaceX) * graphWidth + graphSpaceStartX
+                val endY = Px(1 - (next.y - minY) / spaceY) * graphHeight + graphSpaceStartY
 
                 // 그래프 선 그리기
                 canvas.drawLine(startX.value, startY.value, endX.value, startY.value, linesPaint)
@@ -351,7 +410,7 @@ class Chart @JvmOverloads constructor(
             }
         }
     }
-    
+
     private fun roundToSecondSignificantDigit(number: Float): Float {
         if (number == 0F) {
             return 0F
