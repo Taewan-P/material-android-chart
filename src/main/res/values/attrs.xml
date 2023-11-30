@@ -6,5 +6,7 @@
         <attr name="colorError" format="color" />
         <attr name="colorSurface" format="color" />
         <attr name="colorOnSurface" format="color" />
+        <attr name="colorPrimaryContainer" format="color" />
+        <attr name="colorOnPrimaryContainer" format="color" />
     </declare-styleable>
 </resources>

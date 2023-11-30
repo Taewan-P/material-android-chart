@@ -78,6 +78,8 @@ class Chart @JvmOverloads constructor(
     private var colorError: Int
     private var colorSurface: Int
     private var colorOnSurface: Int
+    private var colorPrimaryContainer: Int
+    private var colorOnPrimaryContainer: Int
 
     private val paint = Paint()
     private val xAxisPaint = Paint(paint)
@@ -86,8 +88,8 @@ class Chart @JvmOverloads constructor(
     private val gradientPaint = Paint(paint)
     private val gradientCoverPaint = Paint(paint)
     private val circlePaint = Paint(paint)
-    val textLabelPaint = Paint(paint)
-    val textRectPaint = Paint(paint)
+    private val textLabelPaint = Paint(paint)
+    private val textRectPaint = Paint(paint)
     private val gridLinePaint = Paint(paint)
 
     private val bounds = Rect()
@@ -123,6 +125,16 @@ class Chart @JvmOverloads constructor(
         colorOnSurface = typedArray.getColor(
             R.styleable.Chart_colorOnSurface,
             Color.BLACK
+        )
+
+        colorPrimaryContainer = typedArray.getColor(
+            R.styleable.Chart_colorPrimaryContainer,
+            Color.BLACK
+        )
+
+        colorOnPrimaryContainer = typedArray.getColor(
+            R.styleable.Chart_colorOnPrimaryContainer,
+            Color.WHITE
         )
 
         setBackgroundColor(colorSurface)
@@ -561,7 +573,7 @@ class Chart @JvmOverloads constructor(
 
                     textLabelPaint.typeface = Typeface.DEFAULT
                     textLabelPaint.textSize = 48F
-                    textLabelPaint.color = colorOnSurface
+                    textLabelPaint.color = colorOnPrimaryContainer
                     textLabelPaint.getTextBounds(text, 0, text.length, bounds)
 
                     val labelRectPaddingVertical = Dp(8F).toPx(context)
@@ -577,12 +589,12 @@ class Chart @JvmOverloads constructor(
                         startY.value - distanceTextAndPoint.value + labelRectPaddingVertical.value
                     )
 
-                    textRectPaint.color = colorSecondary
+                    textRectPaint.color = colorPrimaryContainer
 
                     canvas.drawRoundRect(rect, 10f, 10f, textRectPaint)
                     canvas.drawText(
                         text,
-                        pointX - bounds.width() / 2,
+                        pointX - bounds.width() / 2 - 4F,
                         startY.value - distanceTextAndPoint.value,
                         textLabelPaint
                     )
@@ -614,7 +626,6 @@ class Chart @JvmOverloads constructor(
         val axisStartPointY: Px = (yAxisMargin + availableSpace).toPx(context)
         return (axisStartPointY.toDp(context) - yAxisPadding / Dp(2F)).toPx(context)
     }
-
 
     private fun convertTimeStampToDate(timestamp: Float, mode: GraphMode): String {
         val date = Date((timestamp * 1000).toLong())
