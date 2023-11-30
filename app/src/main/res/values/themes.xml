@@ -43,7 +43,7 @@
 
     <style name="ExampleChartThemeAlternative">
         <item name="colorPrimary">?attr/colorTertiary</item>
-        <item name="colorSecondary">?attr/colorTertiaryContainer</item>
+        <item name="colorSecondary">?attr/colorSecondary</item>
         <item name="colorError">?attr/colorError</item>
         <item name="colorSurface">?attr/colorSurface</item>
         <item name="colorOnSurface">?attr/colorOnSurface</item>
