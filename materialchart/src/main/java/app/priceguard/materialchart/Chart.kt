@@ -14,6 +14,7 @@ import android.util.Log
 import android.view.View
 import androidx.core.graphics.ColorUtils
 import app.priceguard.materialchart.data.ChartDataset
+import app.priceguard.materialchart.data.GraphMode
 import app.priceguard.materialchart.util.Dp
 import app.priceguard.materialchart.util.Px
 import app.priceguard.materialchart.util.div
@@ -22,6 +23,9 @@ import app.priceguard.materialchart.util.plus
 import app.priceguard.materialchart.util.times
 import app.priceguard.materialchart.util.toDp
 import app.priceguard.materialchart.util.toPx
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
@@ -149,8 +153,8 @@ class Chart @JvmOverloads constructor(
         // Get chart data & max/min value
         val chartData = dataset?.data ?: return
 
-        val maxValue = chartData.maxOf { it.y }
-        val minValue = chartData.minOf { it.y }
+        val maxValue = chartData.maxOf { it.x }
+        val minValue = chartData.minOf { it.x }
 
         val difference = if (maxValue == minValue) {
             maxValue
@@ -218,22 +222,19 @@ class Chart @JvmOverloads constructor(
         val minPointX: Px = axisStartPointX
         val maxPointX: Px = axisEndPointX - xAxisPadding.toPx(context)
 
+
+        val minLabel: String = convertTimeStampToDate(minValue, dataset?.graphMode ?: GraphMode.DAY)
+        val maxLabel: String = convertTimeStampToDate(maxValue, dataset?.graphMode ?: GraphMode.DAY)
+
         drawAxisTick(canvas, minPointX, tickStartPointY, minPointX, tickEndPointY, paint)
         drawAxisTick(canvas, maxPointX, tickStartPointY, maxPointX, tickEndPointY, paint)
-        drawXAxisLabelText(canvas, minValue.toString(), minPointX, tickEndPointY, Dp(8F), paint)
-        drawXAxisLabelText(canvas, maxValue.toString(), maxPointX, tickEndPointY, Dp(8F), paint)
+        drawXAxisLabelText(canvas, minLabel, minPointX, tickEndPointY, Dp(8F), paint)
+        drawXAxisLabelText(canvas, maxLabel, maxPointX, tickEndPointY, Dp(8F), paint)
 
         (neededLabels - 1 downTo 1).forEach { idx ->
             val tickPointX: Px = maxPointX - actualSpacing.toPx(context) * Px(idx.toFloat())
 
-            val label = maxValue - unit * idx
-
-            val labelString = if (label - label.toInt() > 1e-6) {
-                String.format("%.1f", label)
-            } else {
-                label.toInt().toString()
-            }
-
+            val labelString = convertTimeStampToDate(maxValue - idx * unit, dataset?.graphMode ?: GraphMode.DAY)
             if (tickPointX.value >= axisStartPointX.value) {
                 drawAxisTick(canvas, tickPointX, tickStartPointY, tickPointX, tickEndPointY, paint)
                 drawXAxisLabelText(canvas, labelString, tickPointX, tickEndPointY, Dp(8F), paint)
@@ -487,6 +488,19 @@ class Chart @JvmOverloads constructor(
                 canvas.drawLine(endX.value, startY.value, endX.value, endY.value, linesPaint)
             }
         }
+    }
+
+    private fun convertTimeStampToDate(timestamp: Float, mode: GraphMode): String {
+        val date = Date((timestamp * 1000).toLong())
+
+        val format = when (mode) {
+            GraphMode.DAY -> SimpleDateFormat("HH:mm", Locale.getDefault())
+            GraphMode.WEEK -> SimpleDateFormat("MM/dd", Locale.getDefault())
+            GraphMode.MONTH -> SimpleDateFormat("MM/dd", Locale.getDefault())
+            GraphMode.QUARTER -> SimpleDateFormat("yyyy/MM", Locale.getDefault())
+        }
+
+        return format.format(date)
     }
 
     private fun roundToSecondSignificantDigit(number: Float): Float {
