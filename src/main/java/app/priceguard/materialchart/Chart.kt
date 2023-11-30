@@ -152,6 +152,12 @@ class Chart @JvmOverloads constructor(
         val maxValue = chartData.maxOf { it.y }
         val minValue = chartData.minOf { it.y }
 
+        val difference = if (maxValue == minValue) {
+            maxValue
+        } else {
+            maxValue - minValue
+        }
+
         // Calculate available axis space
         val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
 
@@ -169,9 +175,9 @@ class Chart @JvmOverloads constructor(
         }
 
         // Calculate how much each ticks should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 1).toFloat())
+        val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
 
-        val actualSpacing = availableLabelSpace * Dp(unit / (maxValue - minValue))
+        val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
         // Calculate how much labels are actually needed & override spacing
         val neededLabels = if (availableLabels <= 5) {
@@ -244,6 +250,12 @@ class Chart @JvmOverloads constructor(
         val maxValue = chartData.maxOf { it.y }
         val minValue = chartData.minOf { it.y }
 
+        val difference = if (maxValue == minValue) {
+            maxValue
+        } else {
+            maxValue - minValue
+        }
+
         // Calculate available axis space
         val availableSpace: Dp = Px(height.toFloat()).toDp(context) - yAxisMargin * Dp(2F)
 
@@ -261,9 +273,9 @@ class Chart @JvmOverloads constructor(
         }
 
         // Calculate how much each ticks should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 1).toFloat())
+        val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
 
-        val actualSpacing = availableLabelSpace * Dp(unit / (maxValue - minValue))
+        val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
         // Calculate how much labels are actually needed & override spacing
         val neededLabels = if (availableLabels <= 5) {
