@@ -226,6 +226,12 @@ class Chart @JvmOverloads constructor(
         val minLabel: String = convertTimeStampToDate(minValue, dataset?.graphMode ?: GraphMode.DAY)
         val maxLabel: String = convertTimeStampToDate(maxValue, dataset?.graphMode ?: GraphMode.DAY)
 
+        if (minValue == maxValue) {
+            drawAxisTick(canvas, maxPointX, tickStartPointY, maxPointX, tickEndPointY, paint)
+            drawXAxisLabelText(canvas, maxLabel, maxPointX, tickEndPointY, Dp(8F), paint)
+            return
+        }
+
         drawAxisTick(canvas, minPointX, tickStartPointY, minPointX, tickEndPointY, paint)
         drawAxisTick(canvas, maxPointX, tickStartPointY, maxPointX, tickEndPointY, paint)
         drawXAxisLabelText(canvas, minLabel, minPointX, tickEndPointY, Dp(8F), paint)
@@ -316,6 +322,13 @@ class Chart @JvmOverloads constructor(
         // Draw min & max first
         val minPointY: Px = (axisStartPointY.toDp(context) - yAxisPadding / Dp(2F)).toPx(context)
         val maxPointY: Px = (axisEndPointY.toDp(context) + yAxisPadding / Dp(2F)).toPx(context)
+
+        if (minValue == maxValue) {
+            val middlePointY = (minPointY + maxPointY) / Px(2F)
+            drawAxisTick(canvas, tickStartPointX, middlePointY, tickEndPointX, middlePointY, paint)
+            drawYAxisLabelText(canvas, maxValue, tickStartPointX, middlePointY, Dp(8F), paint)
+            return
+        }
 
         drawAxisTick(canvas, tickStartPointX, minPointY, tickEndPointX, minPointY, paint)
         drawAxisTick(canvas, tickStartPointX, maxPointY, tickEndPointX, maxPointY, paint)
