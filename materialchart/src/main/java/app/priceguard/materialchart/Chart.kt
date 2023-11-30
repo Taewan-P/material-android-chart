@@ -47,10 +47,11 @@ class Chart @JvmOverloads constructor(
     var xAxisSpacing: Dp = Dp(32F)
     var yAxisSpacing: Dp = Dp(32F)
 
-
     var axisStrokeWidth = 3f
     // Tick: lines that are shown in axis with data labels
     var halfTickLength: Dp = Dp(4F)
+    // ZeroDp: Delete Padding. 1dp for show lines in corners and edges
+    var zeroDp = Dp(1F)
 
     // Use Android theme
     private var colorPrimary: Int
@@ -110,8 +111,28 @@ class Chart @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        drawXAxis(canvas, xAxisPaint)
-        drawYAxis(canvas, yAxisPaint)
+        dataset ?: return
+        if (dataset?.showXAxis == false) {
+            if (dataset?.showYAxis == false) {
+                xAxisMargin = zeroDp
+                xGraphPadding = zeroDp
+            } else {
+                yAxisMargin = zeroDp
+                drawYAxis(canvas, yAxisPaint)
+            }
+        }
+        else if (dataset?.showYAxis == false) {
+            if (dataset?.showXAxis == false) {
+                yAxisMargin = zeroDp
+                yGraphPadding = zeroDp
+            } else {
+                xAxisMargin = zeroDp
+                drawXAxis(canvas, xAxisPaint)
+            }
+        } else {
+            drawYAxis(canvas, yAxisPaint)
+            drawXAxis(canvas, xAxisPaint)
+        }
         drawLine(canvas)
     }
 
