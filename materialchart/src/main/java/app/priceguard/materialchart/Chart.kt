@@ -282,7 +282,7 @@ class Chart @JvmOverloads constructor(
     }
 
     private fun drawYAxis(canvas: Canvas, paint: Paint) {
-        if (dataset == null) return
+        dataset ?: return
 
         // Get chart data & max/min value
         val chartData = dataset?.data ?: return
@@ -449,7 +449,7 @@ class Chart @JvmOverloads constructor(
     }
 
     private fun drawLine(canvas: Canvas) {
-        if (dataset == null) return
+        dataset ?: return
 
         val chartData = dataset?.data!!
         val size = chartData.size
@@ -548,7 +548,7 @@ class Chart @JvmOverloads constructor(
     }
 
     private fun drawPointAndLabel(canvas: Canvas) {
-        if (dataset == null) return
+        dataset ?: return
 
         val chartData = dataset?.data!!
         val size = chartData.size
@@ -558,8 +558,16 @@ class Chart @JvmOverloads constructor(
         val maxY = chartData.maxOf { it.y }
         val minY = chartData.minOf { it.y }
 
-        val spaceX = if (maxX - minX > 0) maxX - minX else maxX
-        val spaceY = if (maxY - minY > 0) maxY - minY else maxY
+        val spaceX = if (maxX - minX > 0) {
+            maxX - minX
+        } else {
+            maxX
+        }
+        val spaceY = if (maxY - minY > 0) {
+            maxY - minY
+        } else {
+            maxY
+        }
 
         val graphSpaceStartX = calculateXAxisFirstTick()
         val graphSpaceEndX = calculateXAxisLastTick()
@@ -621,7 +629,11 @@ class Chart @JvmOverloads constructor(
     }
 
     private fun convertToText(num: Float): String {
-        return if (num.toInt().toFloat() == num) num.toInt().toString() else num.toString()
+        return if (num.toInt().toFloat() == num) {
+            num.toInt().toString()
+        } else {
+            num.toString()
+        }
     }
 
     private fun calculateXAxisFirstTick(): Px {
@@ -725,7 +737,9 @@ class Chart @JvmOverloads constructor(
         dataset?.gridLines?.sortedBy { it.value * -1 }?.forEach { data ->
             val lineHeight: Px =
                 Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
-            if (minY > data.value || data.value > maxY) return@forEach
+            if (minY > data.value || data.value > maxY) {
+                return@forEach
+            }
             val axisStartPointX: Px = (xAxisMargin).toPx(context)
             val axisEndPointX: Px = (xAxisMargin + availableSpace).toPx(context)
 
