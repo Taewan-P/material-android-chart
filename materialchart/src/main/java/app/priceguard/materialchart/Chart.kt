@@ -34,6 +34,10 @@ class Chart @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
     var dataset: ChartDataset? = null
+        set(value) {
+            field = value
+            invalidate()
+        }
 
     // Margin: Empty space from the view to the graph on the outside. This includes the other side as well (Like horizontal & vertical margins)
     var xAxisMargin: Dp = Dp(32F)
