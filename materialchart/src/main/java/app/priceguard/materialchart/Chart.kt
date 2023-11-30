@@ -3,12 +3,14 @@ package app.priceguard.materialchart
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.DashPathEffect
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.Shader.TileMode
 import android.graphics.Typeface
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import androidx.core.graphics.ColorUtils
 import app.priceguard.materialchart.data.ChartDataset
@@ -24,6 +26,7 @@ import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.roundToInt
+
 
 class Chart @JvmOverloads constructor(
     context: Context,
@@ -51,6 +54,7 @@ class Chart @JvmOverloads constructor(
     var axisStrokeWidth = 3f
     // Tick: lines that are shown in axis with data labels
     var halfTickLength: Dp = Dp(4F)
+    var gridLineStrokeWidth = 6f
     // ZeroDp: Delete Padding. 1dp for show lines in corners and edges
     var zeroDp = Dp(1F)
 
@@ -67,6 +71,7 @@ class Chart @JvmOverloads constructor(
     private val linesPaint = Paint(paint)
     private val gradientPaint = Paint(paint)
     private val gradientCoverPaint = Paint(paint)
+    private val gridLinePaint = Paint(paint)
 
     private val bounds = Rect()
 
@@ -112,23 +117,32 @@ class Chart @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        //drawLine() and DrawGridLine() must be call after margin set
+        //and call before drawXAxis and drawYAxis be called
         dataset ?: return
         if (dataset?.showXAxis == false && dataset?.showYAxis == false) {
             xAxisMargin = zeroDp
             xGraphPadding = zeroDp
             yAxisMargin = zeroDp
             yGraphPadding = zeroDp
+            drawLine(canvas)
+            drawGridLine(canvas, gridLinePaint)
         } else if (dataset?.showXAxis == true && dataset?.showYAxis == false) {
             xAxisMargin = zeroDp
+            drawLine(canvas)
+            drawGridLine(canvas, gridLinePaint)
             drawXAxis(canvas, xAxisPaint)
         } else if (dataset?.showXAxis == false && dataset?.showYAxis == true) {
             yAxisMargin = zeroDp
+            drawLine(canvas)
+            drawGridLine(canvas, gridLinePaint)
             drawYAxis(canvas, yAxisPaint)
         } else {
+            drawLine(canvas)
+            drawGridLine(canvas, gridLinePaint)
             drawYAxis(canvas, yAxisPaint)
             drawXAxis(canvas, xAxisPaint)
         }
-        drawLine(canvas)
     }
 
     private fun drawXAxis(canvas: Canvas, paint: Paint) {
@@ -443,4 +457,62 @@ class Chart @JvmOverloads constructor(
         return result
     }
 
+    private fun drawGridLine(canvas: Canvas, paint: Paint) {
+
+        // Get chart data & max/min value
+        val chartData = dataset?.data ?: return
+
+        val maxY = chartData.maxOf { it.y }
+        val minY = chartData.minOf { it.y }
+        val spaceY = maxY - minY
+
+        val graphSpaceStartY = yAxisMargin.toPx(context) + yGraphPadding.toPx(context)
+        val graphSpaceEndY = Px(height.toFloat()) - yAxisMargin.toPx(context) - yGraphPadding.toPx(context)
+
+        val graphHeight = graphSpaceEndY - graphSpaceStartY
+
+        // Calculate available axis space
+        val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
+
+        //Draw GridLines
+        dataset?.gridLines?.sortedBy{ it.value * -1 }?.forEach { data ->
+            val lineHeight: Px = Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
+            if (minY > data.value || data.value > maxY) return@forEach
+            val axisStartPointX: Px = (xAxisMargin).toPx(context)
+            val axisEndPointX: Px = (xAxisMargin + availableSpace).toPx(context)
+
+            //Set paint
+            val dashPath = DashPathEffect(floatArrayOf(25f, 5f), 2f)
+            paint.style = Paint.Style.STROKE
+            paint.pathEffect = dashPath
+            paint.strokeWidth = gridLineStrokeWidth
+            paint.color = colorSecondary
+
+            canvas.drawLine(
+                axisStartPointX.value,
+                lineHeight.value,
+                axisEndPointX.value,
+                lineHeight.value,
+                paint
+            )
+
+            // Draw ticks & labels
+            paint.strokeWidth = 2F
+            paint.pathEffect = null
+            paint.typeface = Typeface.DEFAULT
+            paint.textSize = 24F
+            paint.color = colorOnSurface
+
+            val labelString = data.name
+
+            paint.getTextBounds(labelString, 0, labelString.length, bounds)
+            val textWidth = Px(bounds.width().toFloat())
+            val textHeight = Px(bounds.height().toFloat())
+
+            val labelStartPointX: Px = axisEndPointX - textWidth
+            val labelStartPointY: Px = lineHeight - textHeight
+
+            canvas.drawText(data.name, labelStartPointX.value, labelStartPointY.value, paint)
+        }
+    }
 }

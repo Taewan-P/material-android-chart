@@ -7,4 +7,5 @@ interface ChartDataset {
     val showYAxis: Boolean
     val touchListener: OnTouchListener?
     val data: List<ChartData>
+    val gridLines: List<GridLine>
 }
