@@ -12,7 +12,6 @@ import android.graphics.Shader.TileMode
 import android.graphics.Typeface
 import android.util.AttributeSet
 import android.view.MotionEvent
-import android.util.Log
 import android.view.View
 import androidx.core.graphics.ColorUtils
 import app.priceguard.materialchart.data.ChartDataset
@@ -452,8 +451,8 @@ class Chart @JvmOverloads constructor(
 
         val graphSpaceStartX = calculateXAxisFirstTick()
         val graphSpaceEndX = calculateXAxisLastTick()
-        val graphSpaceStartY = calculateYAxisLastTick()
-        val graphSpaceEndY = calculateYAxisFirstTick()
+        val graphSpaceStartY = calculateYAxisFirstAndLastTick().second
+        val graphSpaceEndY = calculateYAxisFirstAndLastTick().first
 
         val gradationEndY = Px(height.toFloat()) - yAxisMargin.toPx(context)
 
@@ -547,8 +546,8 @@ class Chart @JvmOverloads constructor(
 
         val graphSpaceStartX = calculateXAxisFirstTick()
         val graphSpaceEndX = calculateXAxisLastTick()
-        val graphSpaceStartY = calculateYAxisLastTick()
-        val graphSpaceEndY = calculateYAxisFirstTick()
+        val graphSpaceStartY = calculateYAxisFirstAndLastTick().second
+        val graphSpaceEndY = calculateYAxisFirstAndLastTick().first
 
         val graphWidth = graphSpaceEndX - graphSpaceStartX
         val graphHeight = graphSpaceEndY - graphSpaceStartY
@@ -616,15 +615,25 @@ class Chart @JvmOverloads constructor(
         val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
         return (xAxisMargin + availableSpace - xAxisPadding).toPx(context)
     }
-    private fun calculateYAxisLastTick(): Px {
-        val axisEndPointY: Px = yAxisMargin.toPx(context)
-        return (axisEndPointY.toDp(context) + yAxisPadding / Dp(2F)).toPx(context)
-    }
+    private fun calculateYAxisFirstAndLastTick(): Pair<Px, Px> {
+        val chartData = dataset?.data!!
 
-    private fun calculateYAxisFirstTick(): Px {
+        val maxY = chartData.maxOf { it.y }
+        val minY = chartData.minOf { it.y }
+
         val availableSpace: Dp = Px(height.toFloat()).toDp(context) - yAxisMargin * Dp(2F)
         val axisStartPointY: Px = (yAxisMargin + availableSpace).toPx(context)
-        return (axisStartPointY.toDp(context) - yAxisPadding / Dp(2F)).toPx(context)
+        val axisEndPointY: Px = yAxisMargin.toPx(context)
+
+        val minPointY: Px = (axisStartPointY.toDp(context) - yAxisPadding / Dp(2F)).toPx(context)
+        val maxPointY: Px = (axisEndPointY.toDp(context) + yAxisPadding / Dp(2F)).toPx(context)
+
+        if (maxY == minY) {
+            val middlePointY = (minPointY + maxPointY) / Px(2F)
+            return Pair(middlePointY, middlePointY)
+        }
+
+        return Pair(minPointY, maxPointY)
     }
 
     private fun convertTimeStampToDate(timestamp: Float, mode: GraphMode): String {
