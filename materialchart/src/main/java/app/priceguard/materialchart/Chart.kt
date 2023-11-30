@@ -116,21 +116,29 @@ class Chart @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        drawLine(canvas)
-        drawGridLine(canvas, paint)
+        //drawLine() and DrawGridLine() must be call after margin set
+        //and call before drawXAxis and drawYAxis be called
         dataset ?: return
         if (dataset?.showXAxis == false && dataset?.showYAxis == false) {
             xAxisMargin = zeroDp
             xGraphPadding = zeroDp
             yAxisMargin = zeroDp
             yGraphPadding = zeroDp
+            drawLine(canvas)
+            drawGridLine(canvas, gridLinePaint)
         } else if (dataset?.showXAxis == true && dataset?.showYAxis == false) {
             xAxisMargin = zeroDp
+            drawLine(canvas)
+            drawGridLine(canvas, gridLinePaint)
             drawXAxis(canvas, xAxisPaint)
         } else if (dataset?.showXAxis == false && dataset?.showYAxis == true) {
             yAxisMargin = zeroDp
+            drawLine(canvas)
+            drawGridLine(canvas, gridLinePaint)
             drawYAxis(canvas, yAxisPaint)
         } else {
+            drawLine(canvas)
+            drawGridLine(canvas, gridLinePaint)
             drawYAxis(canvas, yAxisPaint)
             drawXAxis(canvas, xAxisPaint)
         }
@@ -457,27 +465,27 @@ class Chart @JvmOverloads constructor(
         val minY = chartData.minOf { it.y }
         val spaceY = maxY - minY
 
-        val graphSpaceStartY = yAxisPadding.toPx(context) + yGraphPadding.toPx(context) - Px(1f)
-        val graphSpaceEndY = Px(height.toFloat()) - yAxisPadding.toPx(context) - yGraphPadding.toPx(context)
+        val graphSpaceStartY = yAxisMargin.toPx(context) + yGraphPadding.toPx(context) - Px(1f)
+        val graphSpaceEndY = Px(height.toFloat()) - yAxisMargin.toPx(context) - yGraphPadding.toPx(context)
 
         val graphHeight = graphSpaceEndY - graphSpaceStartY
 
         // Calculate available axis space
-        val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisPadding * Dp(2F)
-
-        //Set paint
-        val dashPath = DashPathEffect(floatArrayOf(25f, 5f), 2f)
-        paint.style = Paint.Style.STROKE
-        paint.pathEffect = dashPath
-        paint.strokeWidth = gridLineStrokeWidth
-        paint.color = colorSecondary
+        val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
 
         //Draw GridLines
         dataset?.gridLines?.forEach { data ->
             val height: Px = Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
             if (height.value < graphSpaceStartY.value || height.value > graphSpaceEndY.value) return@forEach
-            val axisStartPointX: Px = xAxisPadding.toPx(context)
-            val axisEndPointX: Px = (xAxisPadding + availableSpace).toPx(context)
+            val axisStartPointX: Px = (xAxisMargin).toPx(context)
+            val axisEndPointX: Px = (xAxisMargin + availableSpace).toPx(context)
+
+            //Set paint
+            val dashPath = DashPathEffect(floatArrayOf(25f, 5f), 2f)
+            paint.style = Paint.Style.STROKE
+            paint.pathEffect = dashPath
+            paint.strokeWidth = gridLineStrokeWidth
+            paint.color = colorSecondary
 
             canvas.drawLine(
                 axisStartPointX.value,
