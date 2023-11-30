@@ -464,7 +464,6 @@ class Chart @JvmOverloads constructor(
         // 선 그리는 paint 설정
         linesPaint.style = Paint.Style.FILL
         linesPaint.strokeWidth = 6F
-        linesPaint.color = colorPrimary
 
         chartData.forEachIndexed { index, data ->
             if (index < size - 1) {
@@ -493,6 +492,7 @@ class Chart @JvmOverloads constructor(
         chartData.forEachIndexed { index, data ->
             if (index < size - 1) {
                 val next = chartData[index + 1]
+                linesPaint.color = if(data.valid) colorPrimary else colorError
 
                 // 각 데이터를 그릴 시작과 끝 위치 계산
                 val startX = Px((data.x - minX) / spaceX) * graphWidth + graphSpaceStartX
