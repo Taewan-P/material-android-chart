@@ -699,6 +699,9 @@ class Chart @JvmOverloads constructor(
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
+        if (dataset?.isInteractive != true) {
+            return true
+        }
         when (event?.action) {
             MotionEvent.ACTION_DOWN -> {
                 isDragging = true
