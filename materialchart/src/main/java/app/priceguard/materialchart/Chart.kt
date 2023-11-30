@@ -170,7 +170,6 @@ class Chart @JvmOverloads constructor(
             drawYAxis(canvas, yAxisPaint)
             drawXAxis(canvas, xAxisPaint)
         }
-        drawLine(canvas)
 
         if (isDragging) {
             drawPointAndLabel(canvas)
