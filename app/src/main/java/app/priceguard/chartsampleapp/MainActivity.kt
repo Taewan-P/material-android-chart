@@ -1,12 +1,8 @@
 package app.priceguard.chartsampleapp
 
-import android.graphics.Color
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import android.util.TypedValue
+import androidx.appcompat.app.AppCompatActivity
 import app.priceguard.materialchart.Chart
-import java.lang.String
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -17,7 +13,6 @@ class MainActivity : AppCompatActivity() {
         chart1.dataset = ExampleDataset(
             showXAxis = true,
             showYAxis = false,
-            touchListener = { v, _ -> v.performClick() },
             data = listOf(
                 ExampleData(1F, 10F),
                 ExampleData(2F, 1F),
@@ -34,7 +29,6 @@ class MainActivity : AppCompatActivity() {
         chart2.dataset = ExampleDataset(
             showXAxis = false,
             showYAxis = false,
-            touchListener = { v, _ -> v.performClick() },
             data = listOf(
                 ExampleData(2F, 5F),
                 ExampleData(5F, 10F),
