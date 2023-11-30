@@ -371,7 +371,7 @@ class Chart @JvmOverloads constructor(
 
         val chartSpaceEndY = Px(height.toFloat()) - yAxisMargin.toPx(context) - Px(axisStrokeWidth)
 
-        // 그라데이션 위치, 색상, 모드 설정
+        // Set gradation position, color, mode
         gradientPaint.shader =
             LinearGradient(
                 graphSpaceStartX.value,
@@ -383,7 +383,7 @@ class Chart @JvmOverloads constructor(
                 TileMode.CLAMP
             )
 
-        // 그래프 전체를 그라데이션으로 칠하기
+        // Fill gradation
         canvas.drawRect(
             graphSpaceStartX.value,
             graphSpaceStartY.value + 1f,
@@ -392,11 +392,11 @@ class Chart @JvmOverloads constructor(
             gradientPaint
         )
 
-        // 그라데이션이 필요 없는 부분을 덮어버리는 paint 설정
+        // Set gradation cover paint
         gradientCoverPaint.style = Paint.Style.FILL
         gradientCoverPaint.color = colorSurface
 
-        // 선 그리는 paint 설정
+        // Set lines paint
         linesPaint.style = Paint.Style.FILL
         linesPaint.strokeWidth = 6F
         linesPaint.color = colorPrimary
@@ -405,12 +405,12 @@ class Chart @JvmOverloads constructor(
             if (index < size - 1) {
                 val next = chartData[index + 1]
 
-                // 각 데이터를 그릴 시작과 끝 위치 계산
+                // Calculate position of each data
                 val startX = Px((data.x - minX) / spaceX) * graphWidth + graphSpaceStartX
                 val startY = Px(1 - (data.y - minY) / spaceY) * graphHeight + graphSpaceStartY
                 val endX = Px((next.x - minX) / spaceX) * graphWidth + graphSpaceStartX
 
-                // 그라데이션 필요 없는 부분 덮어버리기 ( Rect 사이로 그라데이션이 보이는 걸 방지하기 위해 endX 1f 값 더함)
+                // Hide the area that doesn't require a gradation
                 canvas.drawRect(
                     startX.value - 1F,
                     0F,
@@ -428,13 +428,12 @@ class Chart @JvmOverloads constructor(
             if (index < size - 1) {
                 val next = chartData[index + 1]
 
-                // 각 데이터를 그릴 시작과 끝 위치 계산
+                // Calculate position of each data
                 val startX = Px((data.x - minX) / spaceX) * graphWidth + graphSpaceStartX
                 val startY = Px(1 - (data.y - minY) / spaceY) * graphHeight + graphSpaceStartY
                 val endX = Px((next.x - minX) / spaceX) * graphWidth + graphSpaceStartX
                 val endY = Px(1 - (next.y - minY) / spaceY) * graphHeight + graphSpaceStartY
 
-                // 그래프 선 그리기
                 canvas.drawLine(startX.value, startY.value, endX.value, startY.value, linesPaint)
                 canvas.drawLine(endX.value, startY.value, endX.value, endY.value, linesPaint)
             }
@@ -467,7 +466,7 @@ class Chart @JvmOverloads constructor(
             if (index < size - 1) {
                 val next = chartData[index + 1]
 
-                // 각 데이터를 그릴 시작과 끝 위치 계산
+                // Calculate position of each data
                 val startX = Px((data.x - minX) / spaceX) * graphWidth + graphSpaceStartX
                 val startY = Px(1 - (data.y - minY) / spaceY) * graphHeight + graphSpaceStartY
                 val endX = Px((next.x - minX) / spaceX) * graphWidth + graphSpaceStartX
