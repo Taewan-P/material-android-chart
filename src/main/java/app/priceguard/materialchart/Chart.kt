@@ -359,7 +359,6 @@ class Chart @JvmOverloads constructor(
         val spaceX = if(maxX - minX > 0) maxX - minX else maxX
         val spaceY = if(maxY - minY > 0) maxY - minY else maxY
 
-
         val graphSpaceStartX = calculateXAxisFirstTick()
         val graphSpaceEndX = calculateXAxisLastTick()
         val graphSpaceStartY = calculateYAxisLastTick()
@@ -473,12 +472,12 @@ class Chart @JvmOverloads constructor(
                 val startY = Px(1 - (data.y - minY) / spaceY) * graphHeight + graphSpaceStartY
                 val endX = Px((next.x - minX) / spaceX) * graphWidth + graphSpaceStartX
 
-                val circleSize = Dp(8f).toPx(context).value
+                val circleSize = Dp(8f).toPx(context)
                 if (startX.value < pointX && endX.value > pointX) {
 
                     circlePaint.style = Paint.Style.FILL
                     circlePaint.color = colorPrimary
-                    canvas.drawCircle(pointX, startY.value, circleSize / 2, circlePaint)
+                    canvas.drawCircle(pointX, startY.value, circleSize.value / 2, circlePaint)
 
                     val text = data.y.toString()
 
@@ -487,17 +486,17 @@ class Chart @JvmOverloads constructor(
                     textLabelPaint.color = colorOnSurface
                     textLabelPaint.getTextBounds(text, 0, text.length, bounds)
 
-                    val labelRectPaddingVertical = Dp(16f)
-                    val labelRectPaddingHorizontal = Dp(16f)
-                    val distanceTextAndPoint = circleSize + 16f
+                    val labelRectPaddingVertical = Dp(8F).toPx(context)
+                    val labelRectPaddingHorizontal = Dp(8F).toPx(context)
+                    val distanceTextAndPoint = circleSize + Dp(8F).toPx(context)
 
                     val rectWidth = bounds.width()
                     val rectHeight = bounds.height()
                     val rect = RectF(
                         pointX - rectWidth / 2 - labelRectPaddingHorizontal.value,
-                        startY.value - rectHeight - distanceTextAndPoint - labelRectPaddingVertical.value,
+                        startY.value - rectHeight - distanceTextAndPoint.value - labelRectPaddingVertical.value,
                         pointX + rectWidth / 2 + labelRectPaddingHorizontal.value,
-                        startY.value - distanceTextAndPoint + labelRectPaddingVertical.value
+                        startY.value - distanceTextAndPoint.value + labelRectPaddingVertical.value
                     )
 
                     textRectPaint.color = colorSecondary
@@ -506,7 +505,7 @@ class Chart @JvmOverloads constructor(
                     canvas.drawText(
                         text,
                         pointX - bounds.width() / 2,
-                        startY.value - distanceTextAndPoint,
+                        startY.value - distanceTextAndPoint.value,
                         textLabelPaint
                     )
                 }
