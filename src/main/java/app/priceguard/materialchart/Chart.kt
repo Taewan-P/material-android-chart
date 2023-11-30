@@ -704,6 +704,7 @@ class Chart @JvmOverloads constructor(
         }
         when (event?.action) {
             MotionEvent.ACTION_DOWN -> {
+                parent.requestDisallowInterceptTouchEvent(true)
                 isDragging = true
             }
 
@@ -712,7 +713,8 @@ class Chart @JvmOverloads constructor(
                 invalidate()
             }
 
-            MotionEvent.ACTION_UP -> {
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                parent.requestDisallowInterceptTouchEvent(false)
                 isDragging = false
                 invalidate()
             }
