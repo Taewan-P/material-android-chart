@@ -306,8 +306,9 @@ class Chart @JvmOverloads constructor(
         val maxY = chartData.maxOf { it.y }
         val minY = chartData.minOf { it.y }
 
-        val spaceX = maxX - minX
-        val spaceY = maxY - minY
+        val spaceX = if(maxX - minX <= 0) maxX - minX else maxX
+        val spaceY = if(maxY - minY <= 0) maxY - minY else maxY
+
 
         // 축과 그래프 사이 빈틈 제거 위해 spaceStart 1f 빼기
         val graphSpaceStartX = xAxisPadding.toPx(context) + Px(axisStrokeWidth) - Px(1f)
@@ -389,8 +390,8 @@ class Chart @JvmOverloads constructor(
         val maxY = chartData.maxOf { it.y }
         val minY = chartData.minOf { it.y }
 
-        val spaceX = maxX - minX
-        val spaceY = maxY - minY
+        val spaceX = if(maxX - minX <= 0) maxX - minX else maxX
+        val spaceY = if(maxY - minY <= 0) maxY - minY else maxY
 
         // 축과 그래프 사이 빈틈 제거 위해 spaceStart 1f 빼기
         val graphSpaceStartX = xAxisPadding.toPx(context) + Px(axisStrokeWidth) - Px(1f)
