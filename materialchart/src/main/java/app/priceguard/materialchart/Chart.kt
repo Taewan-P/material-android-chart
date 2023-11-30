@@ -112,23 +112,17 @@ class Chart @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         dataset ?: return
-        if (dataset?.showXAxis == false) {
-            if (dataset?.showYAxis == false) {
-                xAxisMargin = zeroDp
-                xGraphPadding = zeroDp
-            } else {
-                yAxisMargin = zeroDp
-                drawYAxis(canvas, yAxisPaint)
-            }
-        }
-        else if (dataset?.showYAxis == false) {
-            if (dataset?.showXAxis == false) {
-                yAxisMargin = zeroDp
-                yGraphPadding = zeroDp
-            } else {
-                xAxisMargin = zeroDp
-                drawXAxis(canvas, xAxisPaint)
-            }
+        if (dataset?.showXAxis == false && dataset?.showYAxis == false) {
+            xAxisMargin = zeroDp
+            xGraphPadding = zeroDp
+            yAxisMargin = zeroDp
+            yGraphPadding = zeroDp
+        } else if (dataset?.showXAxis == true && dataset?.showYAxis == false) {
+            xAxisMargin = zeroDp
+            drawXAxis(canvas, xAxisPaint)
+        } else if (dataset?.showXAxis == false && dataset?.showYAxis == true) {
+            yAxisMargin = zeroDp
+            drawYAxis(canvas, yAxisPaint)
         } else {
             drawYAxis(canvas, yAxisPaint)
             drawXAxis(canvas, xAxisPaint)
