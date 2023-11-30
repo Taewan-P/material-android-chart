@@ -16,18 +16,18 @@ class MainActivity : AppCompatActivity() {
         
         val chart1 = findViewById<Chart>(R.id.example_chart_1)
         chart1.dataset = ExampleDataset(
-            showXAxis = false,
-            showYAxis = false,
+            showXAxis = true,
+            showYAxis = true,
             touchListener = { v, _ -> v.performClick() },
             graphMode = GraphMode.DAY,
             data = listOf(
                 ExampleData(1F, 10F, true),
                 ExampleData(2F, 1F, true),
-                ExampleData(3F, 3F, true),
-                ExampleData(4F, 7F, true),
+                ExampleData(3F, 3F, false),
+                ExampleData(4F, 7F, false),
                 ExampleData(5F, 8F, true),
                 ExampleData(6F, 4F, true),
-                ExampleData(7F, 2F, true),
+                ExampleData(7F, 2F, false),
                 ExampleData(8F, 8F, true)
             ),
             gridLines = listOf(ExampleGridLine("목표가", -1f), ExampleGridLine("역대최저가", 1f))
