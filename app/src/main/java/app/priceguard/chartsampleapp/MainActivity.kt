@@ -15,22 +15,23 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         
         val chart1 = findViewById<Chart>(R.id.example_chart_1)
-//        chart1.dataset = ExampleDataset(
-//            showXAxis = false,
-//            showYAxis = false,
-//            touchListener = { v, _ -> v.performClick() },
-//            data = listOf(
-//                ExampleData(1F, 10F),
-//                ExampleData(2F, 1F),
-//                ExampleData(3F, 3F),
-//                ExampleData(4F, 7F),
-//                ExampleData(5F, 8F),
-//                ExampleData(6F, 4F),
-//                ExampleData(7F, 2F),
-//                ExampleData(8F, 8F)
-//            ),
-//            gridLines = listOf(ExampleGridLine("목표가", -1f), ExampleGridLine("역대최저가", 1f))
-//        )
+        chart1.dataset = ExampleDataset(
+            showXAxis = false,
+            showYAxis = false,
+            touchListener = { v, _ -> v.performClick() },
+            graphMode = GraphMode.DAY,
+            data = listOf(
+                ExampleData(1F, 10F),
+                ExampleData(2F, 1F),
+                ExampleData(3F, 3F),
+                ExampleData(4F, 7F),
+                ExampleData(5F, 8F),
+                ExampleData(6F, 4F),
+                ExampleData(7F, 2F),
+                ExampleData(8F, 8F)
+            ),
+            gridLines = listOf(ExampleGridLine("목표가", -1f), ExampleGridLine("역대최저가", 1f))
+        )
 
         val chart2 = findViewById<Chart>(R.id.example_chart_2)
         chart2.dataset = ExampleDataset(
