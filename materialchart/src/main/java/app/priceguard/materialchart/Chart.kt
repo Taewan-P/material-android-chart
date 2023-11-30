@@ -170,7 +170,6 @@ class Chart @JvmOverloads constructor(
             drawYAxis(canvas, yAxisPaint)
             drawXAxis(canvas, xAxisPaint)
         }
-        drawLine(canvas)
 
         if (isDragging) {
             drawPointAndLabel(canvas)
@@ -697,6 +696,9 @@ class Chart @JvmOverloads constructor(
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
+        if (dataset?.isInteractive != true) {
+            return true
+        }
         when (event?.action) {
             MotionEvent.ACTION_DOWN -> {
                 isDragging = true
