@@ -1,19 +1,16 @@
 package app.priceguard.materialchart
 
 import android.content.Context
-import android.content.res.Resources
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Shader.TileMode
 import android.graphics.Rect
+import android.graphics.Shader.TileMode
 import android.graphics.Typeface
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
-import androidx.appcompat.widget.ThemeUtils
-import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import app.priceguard.materialchart.data.ChartDataset
 import app.priceguard.materialchart.util.Dp
 import app.priceguard.materialchart.util.Px
@@ -35,9 +32,13 @@ class Chart @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
     var dataset: ChartDataset? = null
 
-    // Padding: Empty space from the view to the graph. This includes the other side as well (Like horizontal paddings & vertical paddings)
-    var xAxisPadding: Dp = Dp(32F)
-    var yAxisPadding: Dp = Dp(32F)
+    // Margin: Empty space from the view to the graph on the outside. This includes the other side as well (Like horizontal & vertical margins)
+    var xAxisMargin: Dp = Dp(32F)
+    var yAxisMargin: Dp = Dp(32F)
+
+    // Padding: Empty space from the graph on the inside.
+    var xAxisPadding: Dp = xAxisMargin / Dp(2F)
+    var yAxisPadding: Dp = yAxisMargin
 
     var xGraphPadding: Dp = Dp(32F)
     var yGraphPadding: Dp = Dp(32F)
@@ -47,10 +48,11 @@ class Chart @JvmOverloads constructor(
     var xAxisSpacing: Dp = Dp(32F)
     var yAxisSpacing: Dp = Dp(32F)
 
-
     var axisStrokeWidth = 3f
     // Tick: lines that are shown in axis with data labels
     var halfTickLength: Dp = Dp(4F)
+    // ZeroDp: Delete Padding. 1dp for show lines in corners and edges
+    var zeroDp = Dp(1F)
 
     // Use Android theme
     private var colorPrimary: Int
@@ -110,8 +112,22 @@ class Chart @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        drawXAxis(canvas, xAxisPaint)
-        drawYAxis(canvas, yAxisPaint)
+        dataset ?: return
+        if (dataset?.showXAxis == false && dataset?.showYAxis == false) {
+            xAxisMargin = zeroDp
+            xGraphPadding = zeroDp
+            yAxisMargin = zeroDp
+            yGraphPadding = zeroDp
+        } else if (dataset?.showXAxis == true && dataset?.showYAxis == false) {
+            xAxisMargin = zeroDp
+            drawXAxis(canvas, xAxisPaint)
+        } else if (dataset?.showXAxis == false && dataset?.showYAxis == true) {
+            yAxisMargin = zeroDp
+            drawYAxis(canvas, yAxisPaint)
+        } else {
+            drawYAxis(canvas, yAxisPaint)
+            drawXAxis(canvas, xAxisPaint)
+        }
         drawLine(canvas)
     }
 
@@ -121,23 +137,20 @@ class Chart @JvmOverloads constructor(
         // Get chart data & max/min value
         val chartData = dataset?.data ?: return
 
-        val maxValue = chartData.maxOf { it.x }
-        val minValue = chartData.minOf { it.x }
-
         // Calculate available axis space
-        val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisPadding * Dp(2F)
+        val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
 
-        // Calculate how much ticks can be drawn (Based on spacing settings above)
-        val availableLabels = (availableSpace / xAxisSpacing).value.toInt()
+        // Calculate axis space that labels are actually drawn
+        val availableLabelSpace: Dp = availableSpace - xAxisPadding
 
-        // Calculate how much each ticks should represent
-        val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 1).toFloat())
+        // Calculate the label spacing
+        val tickSpacing: Dp = availableLabelSpace / Dp(chartData.size.toFloat() - 1)
 
         // Draw Axis
-        val axisStartPointX: Px = xAxisPadding.toPx(context)
-        val axisStartPointY: Px = Px(height.toFloat()) - yAxisPadding.toPx(context)
-        val axisEndPointX: Px = (xAxisPadding + availableSpace).toPx(context)
-        val axisEndPointY: Px = Px(height.toFloat()) - yAxisPadding.toPx(context)
+        val axisStartPointX: Px = xAxisMargin.toPx(context)
+        val axisStartPointY: Px = Px(height.toFloat()) - yAxisMargin.toPx(context)
+        val axisEndPointX: Px = (xAxisMargin + availableSpace).toPx(context)
+        val axisEndPointY: Px = Px(height.toFloat()) - yAxisMargin.toPx(context)
 
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = axisStrokeWidth
@@ -158,33 +171,31 @@ class Chart @JvmOverloads constructor(
         paint.typeface = Typeface.DEFAULT
         paint.textSize = 24F
 
-        (0.. availableLabels).forEach { idx ->
-            val startPointX: Px = (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
+        (chartData.indices).forEach { idx ->
+            val startPointX: Px = (axisStartPointX.toDp(context) + tickSpacing * Dp(idx.toFloat())).toPx(context)
             val startPointY: Px = (axisStartPointY.toDp(context) - halfTickLength).toPx(context)
-            val endPointX: Px = (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat())).toPx(context)
             val endPointY: Px = (axisStartPointY.toDp(context) + halfTickLength).toPx(context)
-            
+
             canvas.drawLine(
                 startPointX.value,
                 startPointY.value,
-                endPointX.value,
+                startPointX.value,
                 endPointY.value,
                 paint
             )
 
-            val label = minValue + (unit * idx.toFloat() * 100.0).roundToInt() / 100.0
-            val labelString = if (label - label.toInt() > 1e-6) {
-                label.toString()
+            val label = chartData[idx].x
+            val labelString = if (label - label.toInt() > 1e-4) {
+                String.format("%.1f", label)
             } else {
                 label.toInt().toString()
             }
-            Log.d("label", labelString)
 
             paint.getTextBounds(labelString, 0, labelString.length, bounds)
             val textWidth = Px(bounds.width().toFloat())
             val textHeight = Px(bounds.height().toFloat())
 
-            val labelStartPointX: Px = (axisStartPointX.toDp(context) + xAxisSpacing * Dp(idx.toFloat()) - (textWidth / Px(2F)).toDp(context)).toPx(context)
+            val labelStartPointX: Px = (axisStartPointX.toDp(context) + tickSpacing * Dp(idx.toFloat()) - (textWidth / Px(2F)).toDp(context)).toPx(context)
             val labelStartPointY: Px = (axisStartPointY.toDp(context) + halfTickLength + Dp(8F) + textHeight.toDp(context)).toPx(context)
 
             canvas.drawText(labelString, labelStartPointX.value, labelStartPointY.value, paint)
@@ -201,19 +212,38 @@ class Chart @JvmOverloads constructor(
         val minValue = chartData.minOf { it.y }
 
         // Calculate available axis space
-        val availableSpace: Dp = Px(height.toFloat()).toDp(context) - yAxisPadding * Dp(2F)
+        val availableSpace: Dp = Px(height.toFloat()).toDp(context) - yAxisMargin * Dp(2F)
 
-        // Calculate how much ticks can be drawn (Based on spacing settings above)
-        val availableLabels = (availableSpace / yAxisSpacing).value.toInt()
+        // Calculate axis space that labels are actually drawn
+        val availableLabelSpace: Dp = availableSpace - yAxisPadding
+
+        // Number of ticks
+        // ~ 150dp : 3 (max, min, 50%)
+        // ~ 250dp : 5 (max, min, 25%, 50%, 75%)
+        // 250dp ~ : Auto
+        val availableLabels = when {
+            availableLabelSpace.value <= 150F -> 3
+            availableLabelSpace.value <= 250F -> 5
+            else -> {(availableLabelSpace / yAxisSpacing).value.toInt()}
+        }
 
         // Calculate how much each ticks should represent
         val unit = roundToSecondSignificantDigit((maxValue - minValue) / (availableLabels - 1).toFloat())
 
+        val actualSpacing = availableLabelSpace * Dp(unit / (maxValue - minValue))
+
+        // Calculate how much labels are actually needed & override spacing
+        val neededLabels = if (availableLabels <= 5) {
+            availableLabels
+        } else {
+            (availableLabelSpace / actualSpacing).value.roundToInt()
+        }
+
         // Draw Axis
-        val axisStartPointX: Px = xAxisPadding.toPx(context)
-        val axisStartPointY: Px = (yAxisPadding + availableSpace).toPx(context)
-        val axisEndPointX: Px = xAxisPadding.toPx(context)
-        val axisEndPointY: Px = yAxisPadding.toPx(context)
+        val axisStartPointX: Px = xAxisMargin.toPx(context)
+        val axisStartPointY: Px = (yAxisMargin + availableSpace).toPx(context)
+        val axisEndPointX: Px = xAxisMargin.toPx(context)
+        val axisEndPointY: Px = yAxisMargin.toPx(context)
 
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = axisStrokeWidth
@@ -233,38 +263,71 @@ class Chart @JvmOverloads constructor(
         paint.strokeWidth = 2F
         paint.typeface = Typeface.DEFAULT
         paint.textSize = 24F
-      
-        (1..availableLabels).forEach { idx ->
-            val startPointX: Px = (axisStartPointX.toDp(context) - halfTickLength).toPx(context)
-            val startPointY: Px = (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat())).toPx(context)
-            val endPointX: Px = (axisStartPointX.toDp(context) + halfTickLength).toPx(context)
-            val endPointY: Px = (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat())).toPx(context)
 
-            canvas.drawLine(
-                startPointX.value,
-                startPointY.value,
-                endPointX.value,
-                endPointY.value,
-                paint
-            )
+        val tickStartPointX: Px = (axisStartPointX.toDp(context) - halfTickLength).toPx(context)
+        val tickEndPointX: Px = (axisStartPointX.toDp(context) + halfTickLength).toPx(context)
 
-            val label = minValue + (unit * idx.toFloat() * 100.0).roundToInt() / 100.0
-            val labelString = if (label - label.toInt() > 1e-6) {
-                label.toString()
-            } else {
-                label.toInt().toString()
+        // Draw min & max first
+        val minPointY: Px = (axisStartPointY.toDp(context) - yAxisPadding / Dp(2F)).toPx(context)
+        val maxPointY: Px = (axisEndPointY.toDp(context) + yAxisPadding / Dp(2F)).toPx(context)
+
+        drawAxisTick(canvas, tickStartPointX, minPointY, tickEndPointX, minPointY, paint)
+        drawAxisTick(canvas, tickStartPointX, maxPointY, tickEndPointX, maxPointY, paint)
+        drawYAxisLabelText(canvas, minValue, tickStartPointX, minPointY, Dp(8F), paint)
+        drawYAxisLabelText(canvas, maxValue, tickStartPointX, maxPointY, Dp(8F), paint)
+
+        // Draw remaining ticks
+        (1 until neededLabels).forEach { idx ->
+            val tickPointY: Px = minPointY - actualSpacing.toPx(context) * Px(idx.toFloat())
+
+            if (tickPointY.value >= maxPointY.value) {
+                drawAxisTick(canvas, tickStartPointX, tickPointY, tickEndPointX, tickPointY, paint)
+                drawYAxisLabelText(canvas, minValue + unit * idx, tickStartPointX, tickPointY, Dp(8F), paint)
             }
-            Log.d("label", labelString)
-
-            paint.getTextBounds(labelString, 0, labelString.length, bounds)
-            val textWidth = Px(bounds.width().toFloat())
-            val textHeight = Px(bounds.height().toFloat())
-
-            val labelStartPointX: Px = (axisStartPointX.toDp(context) - halfTickLength - Dp(8F) - textWidth.toDp(context)).toPx(context)
-            val labelStartPointY: Px = (axisStartPointY.toDp(context) - yAxisSpacing * Dp(idx.toFloat()) + textHeight.toDp(context) / Dp(2F)).toPx(context)
-
-            canvas.drawText(labelString, labelStartPointX.value, labelStartPointY.value, paint)
         }
+    }
+
+    private fun drawAxisTick(
+        canvas: Canvas,
+        tickStartX: Px,
+        tickStartY: Px,
+        tickEndX: Px,
+        tickEndY: Px,
+        paint: Paint
+    ) {
+        canvas.drawLine(
+            tickStartX.value,
+            tickStartY.value,
+            tickEndX.value,
+            tickEndY.value,
+            paint
+        )
+    }
+
+    private fun drawYAxisLabelText(
+        canvas: Canvas,
+        label: Float,
+        startPointX: Px,
+        startPointY: Px,
+        marginEnd: Dp,
+        paint: Paint
+    ) {
+        val labelString = if (label - label.toInt() > 1e-6) {
+            String.format("%.1f", label)
+        } else {
+            label.toInt().toString()
+        }
+
+        paint.getTextBounds(labelString, 0, labelString.length, bounds)
+        val textWidth = Px(bounds.width().toFloat())
+        val textHeight = Px(bounds.height().toFloat())
+
+        val labelStartPointX: Px =
+            (startPointX.toDp(context) - marginEnd - textWidth.toDp(context)).toPx(context)
+        val labelStartPointY: Px =
+            (startPointY.toDp(context) + textHeight.toDp(context) / Dp(2F)).toPx(context)
+
+        canvas.drawText(labelString, labelStartPointX.value, labelStartPointY.value, paint)
     }
 
     private fun drawLine(canvas: Canvas) {
@@ -282,15 +345,15 @@ class Chart @JvmOverloads constructor(
         val spaceY = maxY - minY
 
         // 축과 그래프 사이 빈틈 제거 위해 spaceStart 1f 빼기
-        val graphSpaceStartX = xAxisPadding.toPx(context) + Px(axisStrokeWidth) - Px(1f)
-        val graphSpaceEndX = Px(width.toFloat()) - xAxisPadding.toPx(context) - xGraphPadding.toPx(context)
-        val graphSpaceStartY = yAxisPadding.toPx(context) + yGraphPadding.toPx(context) - Px(1f)
-        val graphSpaceEndY = Px(height.toFloat()) - yAxisPadding.toPx(context) - yGraphPadding.toPx(context)
+        val graphSpaceStartX = xAxisMargin.toPx(context) + Px(axisStrokeWidth) - Px(1f)
+        val graphSpaceEndX = Px(width.toFloat()) - xAxisMargin.toPx(context) - xGraphPadding.toPx(context)
+        val graphSpaceStartY = yAxisMargin.toPx(context) + yGraphPadding.toPx(context) - Px(1f)
+        val graphSpaceEndY = Px(height.toFloat()) - yAxisMargin.toPx(context) - yGraphPadding.toPx(context)
 
         val graphWidth = graphSpaceEndX - graphSpaceStartX
         val graphHeight = graphSpaceEndY - graphSpaceStartY
 
-        val chartSpaceEndY = Px(height.toFloat()) - yAxisPadding.toPx(context) - Px(axisStrokeWidth)
+        val chartSpaceEndY = Px(height.toFloat()) - yAxisMargin.toPx(context) - Px(axisStrokeWidth)
 
         // 그라데이션 위치, 색상, 모드 설정
         gradientPaint.shader =
@@ -299,7 +362,7 @@ class Chart @JvmOverloads constructor(
                 graphSpaceStartY.value,
                 graphSpaceStartX.value,
                 chartSpaceEndY.value,
-                colorPrimary,
+                ColorUtils.setAlphaComponent(colorPrimary, 180),
                 Color.TRANSPARENT,
                 TileMode.CLAMP
             )
@@ -319,7 +382,7 @@ class Chart @JvmOverloads constructor(
 
         // 선 그리는 paint 설정
         linesPaint.style = Paint.Style.FILL
-        linesPaint.strokeWidth = 1F
+        linesPaint.strokeWidth = 6F
         linesPaint.color = colorPrimary
 
         chartData.forEachIndexed { index, data ->
@@ -340,6 +403,21 @@ class Chart @JvmOverloads constructor(
                     startY.value,
                     gradientCoverPaint
                 )
+            }
+        }
+
+        linesPaint.strokeJoin = Paint.Join.ROUND
+        linesPaint.strokeCap = Paint.Cap.ROUND
+
+        chartData.forEachIndexed { index, data ->
+            if (index < size - 1) {
+                val next = chartData[index + 1]
+
+                // 각 데이터를 그릴 시작과 끝 위치 계산
+                val startX = Px((data.x - minX) / spaceX) * graphWidth + graphSpaceStartX
+                val startY = Px(1 - (data.y - minY) / spaceY) * graphHeight + graphSpaceStartY
+                val endX = Px((next.x - minX) / spaceX) * graphWidth + graphSpaceStartX
+                val endY = Px(1 - (next.y - minY) / spaceY) * graphHeight + graphSpaceStartY
 
                 // 그래프 선 그리기
                 canvas.drawLine(startX.value, startY.value, endX.value, startY.value, linesPaint)
@@ -347,7 +425,7 @@ class Chart @JvmOverloads constructor(
             }
         }
     }
-    
+
     private fun roundToSecondSignificantDigit(number: Float): Float {
         if (number == 0F) {
             return 0F
@@ -356,7 +434,13 @@ class Chart @JvmOverloads constructor(
         val digit = floor(log10(number))
         val power = 10F.pow(digit)
 
-        return (number / power).roundToInt() * power
+        val result = (number / power).roundToInt() * power
+
+        if (result < number) {
+            return result + power
+        }
+
+        return result
     }
 
 }
