@@ -412,9 +412,9 @@ class Chart @JvmOverloads constructor(
 
                 // 그라데이션 필요 없는 부분 덮어버리기 ( Rect 사이로 그라데이션이 보이는 걸 방지하기 위해 endX 1f 값 더함)
                 canvas.drawRect(
-                    startX.value,
-                    graphSpaceStartY.value,
-                    endX.value + 1f,
+                    startX.value - 1F,
+                    0F,
+                    endX.value + 1F,
                     startY.value,
                     gradientCoverPaint
                 )
@@ -479,7 +479,7 @@ class Chart @JvmOverloads constructor(
                     circlePaint.color = colorPrimary
                     canvas.drawCircle(pointX, startY.value, circleSize.value / 2, circlePaint)
 
-                    val text = data.y.toString()
+                    val text = convertToText(data.y)
 
                     textLabelPaint.typeface = Typeface.DEFAULT
                     textLabelPaint.textSize = 48F
@@ -513,6 +513,11 @@ class Chart @JvmOverloads constructor(
         }
 
     }
+
+    private fun convertToText(num: Float): String {
+        return if (num.toInt().toFloat() == num) num.toInt().toString() else num.toString()
+    }
+
     private fun calculateXAxisFirstTick(): Px {
         return xAxisMargin.toPx(context)
     }
