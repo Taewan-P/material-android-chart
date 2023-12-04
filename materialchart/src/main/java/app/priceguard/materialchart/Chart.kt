@@ -470,11 +470,10 @@ class Chart @JvmOverloads constructor(
                 ).toDp(context) + marginTop + halfTickLength + Dp(8F)
             }
 
-            val correction: Px = Dp(4F).toPx(context)
             canvas.rotate(
                 45F,
-                labelStartPointX.value + correction.value,
-                labelStartPointY.value - correction.value
+                labelStartPointX.value + textHeight.value,
+                labelStartPointY.value - textHeight.value
             )
             canvas.drawText(label, labelStartPointX.value, labelStartPointY.value, paint)
             canvas.restore()
