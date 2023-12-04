@@ -462,11 +462,10 @@ class Chart @JvmOverloads constructor(
             val labelStartPointY: Px = startPointY + marginTop.toPx(context) + textHeight
 
             canvas.save()
-            if (yAxisMarginStart.toPx(context).value < textWidth.value * 0.71) {
-                // 0.71 is around 1/sqrt(2). The label will not fully show in this case.
+            if (yAxisMarginStart.toPx(context).value < textWidth.value * ONE_OVER_SQRT_2) {
                 // Automatically adjusts the graph margin
                 yAxisMarginStart = Px(
-                    (textWidth.value * 0.71).roundToInt().toFloat()
+                    (textWidth.value * ONE_OVER_SQRT_2).roundToInt().toFloat()
                 ).toDp(context) + marginTop + halfTickLength + Dp(8F)
             }
 
@@ -843,5 +842,9 @@ class Chart @JvmOverloads constructor(
 
             canvas.drawText(data.name, labelStartPointX.value, labelStartPointY.value, paint)
         }
+    }
+
+    companion object {
+        const val ONE_OVER_SQRT_2 = 0.7071067F
     }
 }
