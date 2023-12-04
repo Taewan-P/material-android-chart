@@ -201,42 +201,22 @@ class Chart @JvmOverloads constructor(
         val maxValue = chartData.maxOf { it.x }
         val minValue = chartData.minOf { it.x }
 
-        val difference = if (maxValue == minValue) {
-            maxValue
-        } else {
-            maxValue - minValue
-        }
-
         // Calculate available axis space
         val availableSpace: Dp =
             Px(width.toFloat()).toDp(context) - xAxisMarginStart - xAxisMarginEnd
 
-        // Calculate axis space that labels are actually drawn
+        // Calculate axis space and count that labels are actually drawn
         val availableLabelSpace: Dp = availableSpace - xAxisPadding
-
-        // Number of ticks
-        // ~ 150dp : 3 (max, min, 50%)
-        // ~ 250dp : 5 (max, min, 25%, 50%, 75%)
-        // 250dp ~ : Auto
-        val availableLabels = when {
-            availableLabelSpace.value <= 150F -> 3
-            availableLabelSpace.value <= 250F -> 5
-            else -> {
-                (availableLabelSpace / yAxisSpacing).value.toInt()
-            }
-        }
+        val availableLabels = getAvailableLabelCount(availableLabelSpace.value, yAxisSpacing.value)
 
         // Calculate how much each ticks should represent
+        val difference = getDifference(maxValue, minValue)
         val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
-
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
         // Calculate how much labels are actually needed & override spacing
-        val neededLabels = if (availableLabels <= 5) {
-            availableLabels
-        } else {
-            (availableLabelSpace / actualSpacing).value.roundToInt()
-        }
+        val neededLabels =
+            getNeededLabelCount(availableLabels, availableLabelSpace.value, actualSpacing.value)
 
         // Draw Axis
         val axisStartPointX: Px = xAxisMarginStart.toPx(context)
@@ -269,7 +249,6 @@ class Chart @JvmOverloads constructor(
         // Draw min & max first
         val minPointX: Px = axisStartPointX
         val maxPointX: Px = axisEndPointX - xAxisPadding.toPx(context)
-
 
         val minLabel: String = convertTimeStampToDate(minValue, dataset?.graphMode ?: GraphMode.DAY)
         val maxLabel: String = convertTimeStampToDate(maxValue, dataset?.graphMode ?: GraphMode.DAY)
@@ -322,41 +301,22 @@ class Chart @JvmOverloads constructor(
         val maxValue = chartData.maxOf { it.y }
         val minValue = chartData.minOf { it.y }
 
-        val difference = if (maxValue == minValue) {
-            maxValue
-        } else {
-            maxValue - minValue
-        }
-
         // Calculate available axis space
         val availableSpace: Dp =
             Px(height.toFloat()).toDp(context) - yAxisMarginStart - yAxisMarginEnd
 
-        // Calculate axis space that labels are actually drawn
+        // Calculate axis space and count that labels are actually drawn
         val availableLabelSpace: Dp = availableSpace - yAxisPadding
+        val availableLabels = getAvailableLabelCount(availableLabelSpace.value, yAxisSpacing.value)
 
-        // Number of ticks
-        // ~ 150dp : 3 (max, min, 50%)
-        // ~ 250dp : 5 (max, min, 25%, 50%, 75%)
-        // 250dp ~ : Auto
-        val availableLabels = when {
-            availableLabelSpace.value <= 150F -> 3
-            availableLabelSpace.value <= 250F -> 5
-            else -> {
-                (availableLabelSpace / yAxisSpacing).value.toInt()
-            }
-        }
-
+        // Calculate how much each ticks should represent
+        val difference = getDifference(maxValue, minValue)
         val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
-
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
         // Calculate how much labels are actually needed & override spacing
-        val neededLabels = if (availableLabels <= 5) {
-            availableLabels
-        } else {
-            (availableLabelSpace / actualSpacing).value.roundToInt()
-        }
+        val neededLabels =
+            getNeededLabelCount(availableLabels, availableLabelSpace.value, actualSpacing.value)
 
         // Draw Axis
         val axisStartPointX: Px = xAxisMarginStart.toPx(context)
@@ -517,15 +477,13 @@ class Chart @JvmOverloads constructor(
         val maxY = chartData.maxOf { it.y }
         val minY = chartData.minOf { it.y }
 
-        val spaceX = if (maxX - minX > 0) maxX - minX else maxX
-        val spaceY = if (maxY - minY > 0) maxY - minY else maxY
+        val spaceX = getSpace(maxX, minX)
+        val spaceY = getSpace(maxY, minY)
 
         val graphSpaceStartX = calculateXAxisFirstTick()
         val graphSpaceEndX = calculateXAxisLastTick()
         val graphSpaceStartY = calculateYAxisFirstAndLastTick().second
         val graphSpaceEndY = calculateYAxisFirstAndLastTick().first
-
-        val gradationEndY = Px(height.toFloat()) - yAxisMarginStart.toPx(context)
 
         val graphWidth = graphSpaceEndX - graphSpaceStartX
         val graphHeight = graphSpaceEndY - graphSpaceStartY
@@ -534,6 +492,8 @@ class Chart @JvmOverloads constructor(
             Px(height.toFloat()) - yAxisMarginStart.toPx(context) - Px(axisStrokeWidth)
 
         // Set gradation position, color, mode
+        val gradationEndY = Px(height.toFloat()) - yAxisMarginStart.toPx(context)
+
         gradientPaint.shader =
             LinearGradient(
                 graphSpaceStartX.value,
@@ -617,16 +577,8 @@ class Chart @JvmOverloads constructor(
         val maxY = chartData.maxOf { it.y }
         val minY = chartData.minOf { it.y }
 
-        val spaceX = if (maxX - minX > 0) {
-            maxX - minX
-        } else {
-            maxX
-        }
-        val spaceY = if (maxY - minY > 0) {
-            maxY - minY
-        } else {
-            maxY
-        }
+        val spaceX = getSpace(maxX, minX)
+        val spaceY = getSpace(maxY, minY)
 
         val graphSpaceStartX = calculateXAxisFirstTick()
         val graphSpaceEndX = calculateXAxisLastTick()
@@ -685,6 +637,12 @@ class Chart @JvmOverloads constructor(
             }
         }
 
+    private fun getSpace(max: Float, min: Float): Float {
+        return if (max - min > 0) {
+            max - min
+        } else {
+            max
+        }
     }
 
     private fun convertToText(num: Float): String {
