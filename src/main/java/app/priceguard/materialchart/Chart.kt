@@ -32,7 +32,6 @@ import kotlin.math.log10
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
-
 class Chart @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -41,33 +40,47 @@ class Chart @JvmOverloads constructor(
     var dataset: ChartDataset? = null
         set(value) {
             field = value
-            if(value?.showXAxis == false){
-                yAxisMargin = zeroDp
+            if (value?.showXAxis == false) {
+                yAxisMarginStart = zeroDp
+                yAxisMarginEnd = zeroDp
                 yGraphPadding = zeroDp
             }
-            if(value?.showYAxis == false) {
-                xAxisMargin = zeroDp
+            if (value?.showYAxis == false) {
+                xAxisMarginStart = zeroDp
+                xAxisMarginEnd = zeroDp
                 xGraphPadding = zeroDp
             }
             invalidate()
         }
 
     // Margin: Empty space from the view to the graph on the outside. This includes the other side as well (Like horizontal & vertical margins)
-    var xAxisMargin: Dp = Dp(32F)
+    var xAxisMarginStart: Dp = Dp(32F)
         set(value) {
             field = value
             invalidate()
         }
 
-    var yAxisMargin: Dp = Dp(32F)
+    var xAxisMarginEnd: Dp = Dp(32F)
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var yAxisMarginStart: Dp = Dp(32F)
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    var yAxisMarginEnd: Dp = Dp(32F)
         set(value) {
             field = value
             invalidate()
         }
 
     // Padding: Empty space from the graph on the inside.
-    var xAxisPadding: Dp = xAxisMargin / Dp(2F)
-    var yAxisPadding: Dp = yAxisMargin
+    var xAxisPadding: Dp = Dp(16F)
+    var yAxisPadding: Dp = Dp(32F)
 
     var xGraphPadding: Dp = Dp(32F)
     var yGraphPadding: Dp = Dp(32F)
@@ -195,7 +208,8 @@ class Chart @JvmOverloads constructor(
         }
 
         // Calculate available axis space
-        val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
+        val availableSpace: Dp =
+            Px(width.toFloat()).toDp(context) - xAxisMarginStart - xAxisMarginEnd
 
         // Calculate axis space that labels are actually drawn
         val availableLabelSpace: Dp = availableSpace - xAxisPadding
@@ -225,10 +239,10 @@ class Chart @JvmOverloads constructor(
         }
 
         // Draw Axis
-        val axisStartPointX: Px = xAxisMargin.toPx(context)
-        val axisStartPointY: Px = Px(height.toFloat()) - yAxisMargin.toPx(context)
-        val axisEndPointX: Px = (xAxisMargin + availableSpace).toPx(context)
-        val axisEndPointY: Px = Px(height.toFloat()) - yAxisMargin.toPx(context)
+        val axisStartPointX: Px = xAxisMarginStart.toPx(context)
+        val axisStartPointY: Px = Px(height.toFloat()) - yAxisMarginStart.toPx(context)
+        val axisEndPointX: Px = (xAxisMarginStart + availableSpace).toPx(context)
+        val axisEndPointY: Px = Px(height.toFloat()) - yAxisMarginStart.toPx(context)
 
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = axisStrokeWidth
@@ -262,7 +276,15 @@ class Chart @JvmOverloads constructor(
 
         if (minValue == maxValue) {
             drawAxisTick(canvas, maxPointX, tickStartPointY, maxPointX, tickEndPointY, paint)
-            drawXAxisLabelText(canvas, maxLabel, maxPointX, tickEndPointY, Dp(8F), actualSpacing, paint)
+            drawXAxisLabelText(
+                canvas,
+                maxLabel,
+                maxPointX,
+                tickEndPointY,
+                Dp(8F),
+                actualSpacing,
+                paint
+            )
             return
         }
 
@@ -278,7 +300,15 @@ class Chart @JvmOverloads constructor(
                 convertTimeStampToDate(maxValue - idx * unit, dataset?.graphMode ?: GraphMode.DAY)
             if (tickPointX.value >= axisStartPointX.value) {
                 drawAxisTick(canvas, tickPointX, tickStartPointY, tickPointX, tickEndPointY, paint)
-                drawXAxisLabelText(canvas, labelString, tickPointX, tickEndPointY, Dp(8F), actualSpacing, paint)
+                drawXAxisLabelText(
+                    canvas,
+                    labelString,
+                    tickPointX,
+                    tickEndPointY,
+                    Dp(8F),
+                    actualSpacing,
+                    paint
+                )
             }
         }
     }
@@ -299,7 +329,8 @@ class Chart @JvmOverloads constructor(
         }
 
         // Calculate available axis space
-        val availableSpace: Dp = Px(height.toFloat()).toDp(context) - yAxisMargin * Dp(2F)
+        val availableSpace: Dp =
+            Px(height.toFloat()).toDp(context) - yAxisMarginStart - yAxisMarginEnd
 
         // Calculate axis space that labels are actually drawn
         val availableLabelSpace: Dp = availableSpace - yAxisPadding
@@ -328,10 +359,10 @@ class Chart @JvmOverloads constructor(
         }
 
         // Draw Axis
-        val axisStartPointX: Px = xAxisMargin.toPx(context)
-        val axisStartPointY: Px = (yAxisMargin + availableSpace).toPx(context)
-        val axisEndPointX: Px = xAxisMargin.toPx(context)
-        val axisEndPointY: Px = yAxisMargin.toPx(context)
+        val axisStartPointX: Px = xAxisMarginStart.toPx(context)
+        val axisStartPointY: Px = (yAxisMarginEnd + availableSpace).toPx(context)
+        val axisEndPointX: Px = xAxisMarginStart.toPx(context)
+        val axisEndPointY: Px = yAxisMarginEnd.toPx(context)
 
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = axisStrokeWidth
@@ -484,12 +515,13 @@ class Chart @JvmOverloads constructor(
         val graphSpaceStartY = calculateYAxisFirstAndLastTick().second
         val graphSpaceEndY = calculateYAxisFirstAndLastTick().first
 
-        val gradationEndY = Px(height.toFloat()) - yAxisMargin.toPx(context)
+        val gradationEndY = Px(height.toFloat()) - yAxisMarginStart.toPx(context)
 
         val graphWidth = graphSpaceEndX - graphSpaceStartX
         val graphHeight = graphSpaceEndY - graphSpaceStartY
 
-        val chartSpaceEndY = Px(height.toFloat()) - yAxisMargin.toPx(context) - Px(axisStrokeWidth)
+        val chartSpaceEndY =
+            Px(height.toFloat()) - yAxisMarginStart.toPx(context) - Px(axisStrokeWidth)
 
         // Set gradation position, color, mode
         gradientPaint.shader =
@@ -654,12 +686,13 @@ class Chart @JvmOverloads constructor(
     }
 
     private fun calculateXAxisFirstTick(): Px {
-        return xAxisMargin.toPx(context)
+        return xAxisMarginStart.toPx(context)
     }
 
     private fun calculateXAxisLastTick(): Px {
-        val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
-        return (xAxisMargin + availableSpace - xAxisPadding).toPx(context)
+        val availableSpace: Dp =
+            Px(width.toFloat()).toDp(context) - xAxisMarginStart - xAxisMarginEnd
+        return (xAxisMarginStart + availableSpace - xAxisPadding).toPx(context)
     }
 
     private fun calculateYAxisFirstAndLastTick(): Pair<Px, Px> {
@@ -668,9 +701,10 @@ class Chart @JvmOverloads constructor(
         val maxY = chartData.maxOf { it.y }
         val minY = chartData.minOf { it.y }
 
-        val availableSpace: Dp = Px(height.toFloat()).toDp(context) - yAxisMargin * Dp(2F)
-        val axisStartPointY: Px = (yAxisMargin + availableSpace).toPx(context)
-        val axisEndPointY: Px = yAxisMargin.toPx(context)
+        val availableSpace: Dp =
+            Px(height.toFloat()).toDp(context) - yAxisMarginStart - yAxisMarginEnd
+        val axisStartPointY: Px = (yAxisMarginEnd + availableSpace).toPx(context)
+        val axisEndPointY: Px = yAxisMarginEnd.toPx(context)
 
         val minPointY: Px = (axisStartPointY.toDp(context) - yAxisPadding / Dp(2F)).toPx(context)
         val maxPointY: Px = (axisEndPointY.toDp(context) + yAxisPadding / Dp(2F)).toPx(context)
@@ -752,7 +786,8 @@ class Chart @JvmOverloads constructor(
         val graphHeight = graphSpaceEndY - graphSpaceStartY
 
         // Calculate available axis space
-        val availableSpace: Dp = Px(width.toFloat()).toDp(context) - xAxisMargin * Dp(2F)
+        val availableSpace: Dp =
+            Px(width.toFloat()).toDp(context) - xAxisMarginStart - xAxisMarginEnd
 
         //Draw GridLines
         dataset?.gridLines?.sortedBy { it.value * -1 }?.forEach { data ->
@@ -761,8 +796,8 @@ class Chart @JvmOverloads constructor(
             if (minY > data.value || data.value > maxY) {
                 return@forEach
             }
-            val axisStartPointX: Px = (xAxisMargin).toPx(context)
-            val axisEndPointX: Px = (xAxisMargin + availableSpace).toPx(context)
+            val axisStartPointX: Px = xAxisMarginStart.toPx(context)
+            val axisEndPointX: Px = (xAxisMarginStart + availableSpace).toPx(context)
 
             //Set paint
             val dashPath = DashPathEffect(floatArrayOf(25f, 5f), 2f)
@@ -797,13 +832,5 @@ class Chart @JvmOverloads constructor(
 
             canvas.drawText(data.name, labelStartPointX.value, labelStartPointY.value, paint)
         }
-    }
-
-    fun setXAxisMargin(value: Float) {
-        xAxisMargin = Dp(value)
-    }
-
-    fun setYAxisMargin(value: Float) {
-        yAxisMargin = Dp(value)
     }
 }
