@@ -262,14 +262,14 @@ class Chart @JvmOverloads constructor(
 
         if (minValue == maxValue) {
             drawAxisTick(canvas, maxPointX, tickStartPointY, maxPointX, tickEndPointY, paint)
-            drawXAxisLabelText(canvas, maxLabel, maxPointX, tickEndPointY, Dp(8F), paint)
+            drawXAxisLabelText(canvas, maxLabel, maxPointX, tickEndPointY, Dp(8F), actualSpacing, paint)
             return
         }
 
         drawAxisTick(canvas, minPointX, tickStartPointY, minPointX, tickEndPointY, paint)
         drawAxisTick(canvas, maxPointX, tickStartPointY, maxPointX, tickEndPointY, paint)
-        drawXAxisLabelText(canvas, minLabel, minPointX, tickEndPointY, Dp(8F), paint)
-        drawXAxisLabelText(canvas, maxLabel, maxPointX, tickEndPointY, Dp(8F), paint)
+        drawXAxisLabelText(canvas, minLabel, minPointX, tickEndPointY, Dp(8F), actualSpacing, paint)
+        drawXAxisLabelText(canvas, maxLabel, maxPointX, tickEndPointY, Dp(8F), actualSpacing, paint)
 
         (neededLabels - 1 downTo 1).forEach { idx ->
             val tickPointX: Px = maxPointX - actualSpacing.toPx(context) * Px(idx.toFloat())
@@ -278,7 +278,7 @@ class Chart @JvmOverloads constructor(
                 convertTimeStampToDate(maxValue - idx * unit, dataset?.graphMode ?: GraphMode.DAY)
             if (tickPointX.value >= axisStartPointX.value) {
                 drawAxisTick(canvas, tickPointX, tickStartPointY, tickPointX, tickEndPointY, paint)
-                drawXAxisLabelText(canvas, labelString, tickPointX, tickEndPointY, Dp(8F), paint)
+                drawXAxisLabelText(canvas, labelString, tickPointX, tickEndPointY, Dp(8F), actualSpacing, paint)
             }
         }
     }
@@ -412,16 +412,31 @@ class Chart @JvmOverloads constructor(
         startPointX: Px,
         startPointY: Px,
         marginTop: Dp,
+        actualSpacing: Dp,
         paint: Paint
     ) {
         paint.getTextBounds(label, 0, label.length, bounds)
         val textWidth = Px(bounds.width().toFloat())
         val textHeight = Px(bounds.height().toFloat())
 
-        val labelStartPointX: Px = startPointX - textWidth / Px(2F)
-        val labelStartPointY: Px = startPointY + marginTop.toPx(context) + textHeight
+        if ((textWidth + Dp(8F).toPx(context)).value < actualSpacing.toPx(context).value) {
+            // Print label text parallel to its axis
+            val labelStartPointX: Px = startPointX - textWidth / Px(2F)
+            val labelStartPointY: Px = startPointY + marginTop.toPx(context) + textHeight
 
-        canvas.drawText(label, labelStartPointX.value, labelStartPointY.value, paint)
+            canvas.drawText(label, labelStartPointX.value, labelStartPointY.value, paint)
+        } else {
+            // Print label text diagonally
+            val labelStartPointX: Px = startPointX
+            val labelStartPointY: Px = startPointY + marginTop.toPx(context) + textHeight
+
+            canvas.save()
+            val correction: Px = Dp(4F).toPx(context)
+            canvas.rotate(45F, labelStartPointX.value + correction.value, labelStartPointY.value - correction.value)
+            canvas.drawText(label, labelStartPointX.value, labelStartPointY.value, paint)
+            canvas.restore()
+        }
+
     }
 
     private fun drawYAxisLabelText(
