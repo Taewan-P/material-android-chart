@@ -97,7 +97,7 @@ class Chart @JvmOverloads constructor(
     var gridLineStrokeWidth = 6f
 
     // ZeroDp: Delete Padding. 1dp for show lines in corners and edges
-    var zeroDp = Dp(1F)
+    private var zeroDp = Dp(1F)
 
     private var pointX = 0f
     private var isDragging = false
@@ -231,7 +231,7 @@ class Chart @JvmOverloads constructor(
 
         // Calculate axis space and count that labels are actually drawn
         val availableLabelSpace: Dp = availableSpace - xAxisPadding
-        val availableLabels = getAvailableLabelCount(availableLabelSpace.value, yAxisSpacing.value)
+        val availableLabels = getAvailableLabelCount(availableLabelSpace.value, xAxisSpacing.value)
 
         // Calculate how much each ticks should represent
         val difference = getDifference(maxValue, minValue)
