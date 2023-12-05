@@ -231,7 +231,7 @@ class Chart @JvmOverloads constructor(
 
         // Calculate axis space and count that labels are actually drawn
         val availableLabelSpace: Dp = availableSpace - xAxisPadding
-        val availableLabels = getAvailableLabelCount(availableLabelSpace.value, xAxisSpacing.value)
+        val availableLabels = getAvailableLabelCount(availableLabelSpace, xAxisSpacing)
 
         // Calculate how much each ticks should represent
         val difference = getDifference(maxValue, minValue)
@@ -239,8 +239,7 @@ class Chart @JvmOverloads constructor(
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
         // Calculate how much labels are actually needed & override spacing
-        val neededLabels =
-            getNeededLabelCount(availableLabels, availableLabelSpace.value, actualSpacing.value)
+        val neededLabels = getNeededLabelCount(availableLabels, availableLabelSpace, actualSpacing)
 
         // Draw Axis
         val axisStartPointX: Px = xAxisMarginStart.toPx(context)
@@ -325,7 +324,7 @@ class Chart @JvmOverloads constructor(
 
         // Calculate axis space and count that labels are actually drawn
         val availableLabelSpace: Dp = availableSpace - yAxisPadding
-        val availableLabels = getAvailableLabelCount(availableLabelSpace.value, yAxisSpacing.value)
+        val availableLabels = getAvailableLabelCount(availableLabelSpace, yAxisSpacing)
 
         // Calculate how much each ticks should represent
         val difference = getDifference(maxValue, minValue)
@@ -333,8 +332,7 @@ class Chart @JvmOverloads constructor(
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
         // Calculate how much labels are actually needed & override spacing
-        val neededLabels =
-            getNeededLabelCount(availableLabels, availableLabelSpace.value, actualSpacing.value)
+        val neededLabels = getNeededLabelCount(availableLabels, availableLabelSpace, actualSpacing)
 
         // Draw Axis
         val axisStartPointX: Px = xAxisMarginStart.toPx(context)
@@ -702,29 +700,29 @@ class Chart @JvmOverloads constructor(
         }
     }
 
-    private fun getAvailableLabelCount(availableLabelSpace: Float, spacing: Float): Int {
+    private fun getAvailableLabelCount(availableLabelSpace: Dp, spacing: Dp): Int {
         // Number of ticks
         // ~ 150dp : 3 (max, min, 50%)
         // ~ 250dp : 5 (max, min, 25%, 50%, 75%)
         // 250dp ~ : Auto
         return when {
-            availableLabelSpace <= 150F -> 3
-            availableLabelSpace <= 250F -> 5
+            availableLabelSpace.value <= 150F -> 3
+            availableLabelSpace.value <= 250F -> 5
             else -> {
-                (availableLabelSpace / spacing).toInt()
+                (availableLabelSpace / spacing).value.toInt()
             }
         }
     }
 
     private fun getNeededLabelCount(
         availableLabels: Int,
-        availableLabelSpace: Float,
-        spacing: Float
+        availableLabelSpace: Dp,
+        spacing: Dp
     ): Int {
         return if (availableLabels <= 5) {
             availableLabels
         } else {
-            (availableLabelSpace / spacing).roundToInt()
+            (availableLabelSpace / spacing).value.roundToInt()
         }
     }
 
