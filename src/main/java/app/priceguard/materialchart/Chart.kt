@@ -100,6 +100,7 @@ class Chart @JvmOverloads constructor(
     private val zeroDp = Dp(1F)
 
     private var pointX = 0f
+    private var pointY = 0f
     private var isDragging = false
 
     // Use Android theme
@@ -193,10 +194,20 @@ class Chart @JvmOverloads constructor(
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if (dataset?.isInteractive != true) {
+        if (dataset?.isInteractive != true || event == null) {
             return false
         }
-        when (event?.action) {
+        pointX = event.x
+        pointY = event.y
+
+        if (pointX < xAxisMarginStart.toPx(context).value
+            || pointX > width.toFloat() - xAxisMarginStart.toPx(context).value
+            || pointY < yAxisMarginEnd.toPx(context).value
+            || pointY > height.toFloat() - yAxisMarginEnd.toPx(context).value
+        ) {
+            return true
+        }
+        when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 parent.requestDisallowInterceptTouchEvent(true)
                 isDragging = true
