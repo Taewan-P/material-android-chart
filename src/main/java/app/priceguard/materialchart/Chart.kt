@@ -628,7 +628,7 @@ class Chart @JvmOverloads constructor(
         val graphWidth = graphSpaceEndX - graphSpaceStartX
         val graphHeight = graphSpaceEndY - graphSpaceStartY
 
-        val pointXData = spaceX * ((pointX - graphSpaceStartX.value) /graphWidth.value) + minX
+        val pointXData = spaceX * ((pointX - graphSpaceStartX.value) / graphWidth.value) + minX
 
         chartData.forEachIndexed { index, data ->
             if (index < size - 1) {
@@ -646,7 +646,12 @@ class Chart @JvmOverloads constructor(
                     canvas.drawCircle(pointX, startY.value, circleSize.value / 2, circlePaint)
 
                     val text =
-                        "${dataset?.xLabel ?: "x"} : ${convertTimeStampToDate(pointXData, dataset?.graphMode ?: GraphMode.DAY)}," +
+                        "${dataset?.xLabel ?: "x"} : ${
+                            convertTimeStampToDate(
+                                pointXData,
+                                dataset?.graphMode ?: GraphMode.DAY
+                            )
+                        }," +
                                 " ${dataset?.yLabel ?: "y"} : ${convertToText(data.y)}"
 
 
@@ -661,10 +666,10 @@ class Chart @JvmOverloads constructor(
                     val rectHeight = bounds.height()
 
                     // Fix point label position when position is out of range
-                    if(pointX - rectWidth / 2 - labelRectPaddingHorizontal.value < 0) {
+                    if (pointX - rectWidth / 2 - labelRectPaddingHorizontal.value < 0) {
                         pointX = rectWidth / 2 + labelRectPaddingHorizontal.value
                     }
-                    if(pointX + rectWidth / 2 + labelRectPaddingHorizontal.value > width.toFloat()) {
+                    if (pointX + rectWidth / 2 + labelRectPaddingHorizontal.value > width.toFloat()) {
                         pointX = width.toFloat() - rectWidth / 2 - labelRectPaddingHorizontal.value
                     }
 
