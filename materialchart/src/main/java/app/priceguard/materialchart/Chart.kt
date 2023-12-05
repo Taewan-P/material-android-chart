@@ -97,7 +97,7 @@ class Chart @JvmOverloads constructor(
     var gridLineStrokeWidth = 6f
 
     // ZeroDp: Delete Padding. 1dp for show lines in corners and edges
-    var zeroDp = Dp(1F)
+    private val zeroDp = Dp(1F)
 
     private var pointX = 0f
     private var isDragging = false
@@ -179,20 +179,44 @@ class Chart @JvmOverloads constructor(
         dataset ?: return
 
         drawLine(canvas)
-        drawGridLine(canvas, gridLinePaint)
+        drawGridLine(canvas)
 
         if (dataset?.showXAxis == true) {
-            drawXAxis(canvas, xAxisPaint)
+            drawXAxis(canvas)
         }
         if (dataset?.showYAxis == true) {
-            drawYAxis(canvas, yAxisPaint)
+            drawYAxis(canvas)
         }
         if (isDragging) {
             drawPointAndLabel(canvas)
         }
     }
 
-    private fun drawXAxis(canvas: Canvas, paint: Paint) {
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        if (dataset?.isInteractive != true) {
+            return false
+        }
+        when (event?.action) {
+            MotionEvent.ACTION_DOWN -> {
+                parent.requestDisallowInterceptTouchEvent(true)
+                isDragging = true
+            }
+
+            MotionEvent.ACTION_MOVE -> {
+                pointX = event.x
+                invalidate()
+            }
+
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                parent.requestDisallowInterceptTouchEvent(false)
+                isDragging = false
+                invalidate()
+            }
+        }
+        return true
+    }
+
+    private fun drawXAxis(canvas: Canvas) {
         if (dataset == null) return
 
         // Get chart data & max/min value
@@ -201,42 +225,21 @@ class Chart @JvmOverloads constructor(
         val maxValue = chartData.maxOf { it.x }
         val minValue = chartData.minOf { it.x }
 
-        val difference = if (maxValue == minValue) {
-            maxValue
-        } else {
-            maxValue - minValue
-        }
-
         // Calculate available axis space
         val availableSpace: Dp =
             Px(width.toFloat()).toDp(context) - xAxisMarginStart - xAxisMarginEnd
 
-        // Calculate axis space that labels are actually drawn
+        // Calculate axis space and count that labels are actually drawn
         val availableLabelSpace: Dp = availableSpace - xAxisPadding
-
-        // Number of ticks
-        // ~ 150dp : 3 (max, min, 50%)
-        // ~ 250dp : 5 (max, min, 25%, 50%, 75%)
-        // 250dp ~ : Auto
-        val availableLabels = when {
-            availableLabelSpace.value <= 150F -> 3
-            availableLabelSpace.value <= 250F -> 5
-            else -> {
-                (availableLabelSpace / yAxisSpacing).value.toInt()
-            }
-        }
+        val availableLabels = getAvailableLabelCount(availableLabelSpace, xAxisSpacing)
 
         // Calculate how much each ticks should represent
+        val difference = getDifference(maxValue, minValue)
         val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
-
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
         // Calculate how much labels are actually needed & override spacing
-        val neededLabels = if (availableLabels <= 5) {
-            availableLabels
-        } else {
-            (availableLabelSpace / actualSpacing).value.roundToInt()
-        }
+        val neededLabels = getNeededLabelCount(availableLabels, availableLabelSpace, actualSpacing)
 
         // Draw Axis
         val axisStartPointX: Px = xAxisMarginStart.toPx(context)
@@ -244,25 +247,17 @@ class Chart @JvmOverloads constructor(
         val axisEndPointX: Px = (xAxisMarginStart + availableSpace).toPx(context)
         val axisEndPointY: Px = Px(height.toFloat()) - yAxisMarginStart.toPx(context)
 
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = axisStrokeWidth
-        paint.color = colorOnSurface
-        paint.strokeJoin = Paint.Join.ROUND
-        paint.strokeCap = Paint.Cap.ROUND
+        xAxisPaint.setAxisPaint()
 
         canvas.drawLine(
             axisStartPointX.value,
             axisStartPointY.value,
             axisEndPointX.value,
             axisEndPointY.value,
-            paint
+            xAxisPaint
         )
 
         // Draw ticks & labels
-        paint.strokeWidth = 2F
-        paint.typeface = Typeface.DEFAULT
-        paint.textSize = 24F
-
         val tickStartPointY: Px = (axisStartPointY.toDp(context) - halfTickLength).toPx(context)
         val tickEndPointY: Px = (axisStartPointY.toDp(context) + halfTickLength).toPx(context)
 
@@ -270,9 +265,10 @@ class Chart @JvmOverloads constructor(
         val minPointX: Px = axisStartPointX
         val maxPointX: Px = axisEndPointX - xAxisPadding.toPx(context)
 
-
         val minLabel: String = convertTimeStampToDate(minValue, dataset?.graphMode ?: GraphMode.DAY)
         val maxLabel: String = convertTimeStampToDate(maxValue, dataset?.graphMode ?: GraphMode.DAY)
+
+        xAxisPaint.setTickPaint()
 
         if (minValue == maxValue) {
             drawAxisTick(canvas, maxPointX, tickStartPointY, maxPointX, tickEndPointY, paint)
@@ -283,15 +279,31 @@ class Chart @JvmOverloads constructor(
                 tickEndPointY,
                 Dp(8F),
                 actualSpacing,
-                paint
+                xAxisPaint
             )
             return
         }
 
-        drawAxisTick(canvas, minPointX, tickStartPointY, minPointX, tickEndPointY, paint)
-        drawAxisTick(canvas, maxPointX, tickStartPointY, maxPointX, tickEndPointY, paint)
-        drawXAxisLabelText(canvas, minLabel, minPointX, tickEndPointY, Dp(8F), actualSpacing, paint)
-        drawXAxisLabelText(canvas, maxLabel, maxPointX, tickEndPointY, Dp(8F), actualSpacing, paint)
+        drawAxisTick(canvas, minPointX, tickStartPointY, minPointX, tickEndPointY, xAxisPaint)
+        drawAxisTick(canvas, maxPointX, tickStartPointY, maxPointX, tickEndPointY, xAxisPaint)
+        drawXAxisLabelText(
+            canvas,
+            minLabel,
+            minPointX,
+            tickEndPointY,
+            Dp(8F),
+            actualSpacing,
+            xAxisPaint
+        )
+        drawXAxisLabelText(
+            canvas,
+            maxLabel,
+            maxPointX,
+            tickEndPointY,
+            Dp(8F),
+            actualSpacing,
+            xAxisPaint
+        )
 
         (neededLabels - 1 downTo 1).forEach { idx ->
             val tickPointX: Px = maxPointX - actualSpacing.toPx(context) * Px(idx.toFloat())
@@ -299,7 +311,14 @@ class Chart @JvmOverloads constructor(
             val labelString =
                 convertTimeStampToDate(maxValue - idx * unit, dataset?.graphMode ?: GraphMode.DAY)
             if (tickPointX.value >= axisStartPointX.value) {
-                drawAxisTick(canvas, tickPointX, tickStartPointY, tickPointX, tickEndPointY, paint)
+                drawAxisTick(
+                    canvas,
+                    tickPointX,
+                    tickStartPointY,
+                    tickPointX,
+                    tickEndPointY,
+                    xAxisPaint
+                )
                 drawXAxisLabelText(
                     canvas,
                     labelString,
@@ -307,13 +326,13 @@ class Chart @JvmOverloads constructor(
                     tickEndPointY,
                     Dp(8F),
                     actualSpacing,
-                    paint
+                    xAxisPaint
                 )
             }
         }
     }
 
-    private fun drawYAxis(canvas: Canvas, paint: Paint) {
+    private fun drawYAxis(canvas: Canvas) {
         dataset ?: return
 
         // Get chart data & max/min value
@@ -322,41 +341,21 @@ class Chart @JvmOverloads constructor(
         val maxValue = chartData.maxOf { it.y }
         val minValue = chartData.minOf { it.y }
 
-        val difference = if (maxValue == minValue) {
-            maxValue
-        } else {
-            maxValue - minValue
-        }
-
         // Calculate available axis space
         val availableSpace: Dp =
             Px(height.toFloat()).toDp(context) - yAxisMarginStart - yAxisMarginEnd
 
-        // Calculate axis space that labels are actually drawn
+        // Calculate axis space and count that labels are actually drawn
         val availableLabelSpace: Dp = availableSpace - yAxisPadding
+        val availableLabels = getAvailableLabelCount(availableLabelSpace, yAxisSpacing)
 
-        // Number of ticks
-        // ~ 150dp : 3 (max, min, 50%)
-        // ~ 250dp : 5 (max, min, 25%, 50%, 75%)
-        // 250dp ~ : Auto
-        val availableLabels = when {
-            availableLabelSpace.value <= 150F -> 3
-            availableLabelSpace.value <= 250F -> 5
-            else -> {
-                (availableLabelSpace / yAxisSpacing).value.toInt()
-            }
-        }
-
+        // Calculate how much each ticks should represent
+        val difference = getDifference(maxValue, minValue)
         val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
-
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
         // Calculate how much labels are actually needed & override spacing
-        val neededLabels = if (availableLabels <= 5) {
-            availableLabels
-        } else {
-            (availableLabelSpace / actualSpacing).value.roundToInt()
-        }
+        val neededLabels = getNeededLabelCount(availableLabels, availableLabelSpace, actualSpacing)
 
         // Draw Axis
         val axisStartPointX: Px = xAxisMarginStart.toPx(context)
@@ -364,25 +363,17 @@ class Chart @JvmOverloads constructor(
         val axisEndPointX: Px = xAxisMarginStart.toPx(context)
         val axisEndPointY: Px = yAxisMarginEnd.toPx(context)
 
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = axisStrokeWidth
-        paint.color = colorOnSurface
-        paint.strokeJoin = Paint.Join.ROUND
-        paint.strokeCap = Paint.Cap.ROUND
+        yAxisPaint.setAxisPaint()
 
         canvas.drawLine(
             axisStartPointX.value,
             axisStartPointY.value,
             axisEndPointX.value,
             axisEndPointY.value,
-            paint
+            yAxisPaint
         )
 
         // Draw ticks & labels
-        paint.strokeWidth = 2F
-        paint.typeface = Typeface.DEFAULT
-        paint.textSize = 24F
-
         val tickStartPointX: Px = (axisStartPointX.toDp(context) - halfTickLength).toPx(context)
         val tickEndPointX: Px = (axisStartPointX.toDp(context) + halfTickLength).toPx(context)
 
@@ -390,31 +381,47 @@ class Chart @JvmOverloads constructor(
         val minPointY: Px = (axisStartPointY.toDp(context) - yAxisPadding / Dp(2F)).toPx(context)
         val maxPointY: Px = (axisEndPointY.toDp(context) + yAxisPadding / Dp(2F)).toPx(context)
 
+        yAxisPaint.setTickPaint()
+
         if (minValue == maxValue) {
             val middlePointY = (minPointY + maxPointY) / Px(2F)
-            drawAxisTick(canvas, tickStartPointX, middlePointY, tickEndPointX, middlePointY, paint)
-            drawYAxisLabelText(canvas, maxValue, tickStartPointX, middlePointY, Dp(8F), paint)
+            drawAxisTick(
+                canvas,
+                tickStartPointX,
+                middlePointY,
+                tickEndPointX,
+                middlePointY,
+                yAxisPaint
+            )
+            drawYAxisLabelText(canvas, maxValue, tickStartPointX, middlePointY, Dp(8F), yAxisPaint)
             return
         }
 
-        drawAxisTick(canvas, tickStartPointX, minPointY, tickEndPointX, minPointY, paint)
-        drawAxisTick(canvas, tickStartPointX, maxPointY, tickEndPointX, maxPointY, paint)
-        drawYAxisLabelText(canvas, minValue, tickStartPointX, minPointY, Dp(8F), paint)
-        drawYAxisLabelText(canvas, maxValue, tickStartPointX, maxPointY, Dp(8F), paint)
+        drawAxisTick(canvas, tickStartPointX, minPointY, tickEndPointX, minPointY, yAxisPaint)
+        drawAxisTick(canvas, tickStartPointX, maxPointY, tickEndPointX, maxPointY, yAxisPaint)
+        drawYAxisLabelText(canvas, minValue, tickStartPointX, minPointY, Dp(8F), yAxisPaint)
+        drawYAxisLabelText(canvas, maxValue, tickStartPointX, maxPointY, Dp(8F), yAxisPaint)
 
         // Draw remaining ticks
         (1 until neededLabels).forEach { idx ->
             val tickPointY: Px = minPointY - actualSpacing.toPx(context) * Px(idx.toFloat())
 
             if (tickPointY.value >= maxPointY.value) {
-                drawAxisTick(canvas, tickStartPointX, tickPointY, tickEndPointX, tickPointY, paint)
+                drawAxisTick(
+                    canvas,
+                    tickStartPointX,
+                    tickPointY,
+                    tickEndPointX,
+                    tickPointY,
+                    yAxisPaint
+                )
                 drawYAxisLabelText(
                     canvas,
                     minValue + unit * idx,
                     tickStartPointX,
                     tickPointY,
                     Dp(8F),
-                    paint
+                    yAxisPaint
                 )
             }
         }
@@ -517,15 +524,13 @@ class Chart @JvmOverloads constructor(
         val maxY = chartData.maxOf { it.y }
         val minY = chartData.minOf { it.y }
 
-        val spaceX = if (maxX - minX > 0) maxX - minX else maxX
-        val spaceY = if (maxY - minY > 0) maxY - minY else maxY
+        val spaceX = getSpace(maxX, minX)
+        val spaceY = getSpace(maxY, minY)
 
         val graphSpaceStartX = calculateXAxisFirstTick()
         val graphSpaceEndX = calculateXAxisLastTick()
         val graphSpaceStartY = calculateYAxisFirstAndLastTick().second
         val graphSpaceEndY = calculateYAxisFirstAndLastTick().first
-
-        val gradationEndY = Px(height.toFloat()) - yAxisMarginStart.toPx(context)
 
         val graphWidth = graphSpaceEndX - graphSpaceStartX
         val graphHeight = graphSpaceEndY - graphSpaceStartY
@@ -534,6 +539,8 @@ class Chart @JvmOverloads constructor(
             Px(height.toFloat()) - yAxisMarginStart.toPx(context) - Px(axisStrokeWidth)
 
         // Set gradation position, color, mode
+        val gradationEndY = Px(height.toFloat()) - yAxisMarginStart.toPx(context)
+
         gradientPaint.shader =
             LinearGradient(
                 graphSpaceStartX.value,
@@ -554,13 +561,7 @@ class Chart @JvmOverloads constructor(
             gradientPaint
         )
 
-        // Set gradation cover paint
-        gradientCoverPaint.style = Paint.Style.FILL
-        gradientCoverPaint.color = colorSurface
-
-        // Set lines paint
-        linesPaint.style = Paint.Style.FILL
-        linesPaint.strokeWidth = 6F
+        gradientCoverPaint.setGradientPaint()
 
         chartData.forEachIndexed { index, data ->
             if (index < size - 1) {
@@ -582,8 +583,7 @@ class Chart @JvmOverloads constructor(
             }
         }
 
-        linesPaint.strokeJoin = Paint.Join.ROUND
-        linesPaint.strokeCap = Paint.Cap.ROUND
+        linesPaint.setLinePaint()
 
         chartData.forEachIndexed { index, data ->
             if (index < size - 1) {
@@ -617,16 +617,8 @@ class Chart @JvmOverloads constructor(
         val maxY = chartData.maxOf { it.y }
         val minY = chartData.minOf { it.y }
 
-        val spaceX = if (maxX - minX > 0) {
-            maxX - minX
-        } else {
-            maxX
-        }
-        val spaceY = if (maxY - minY > 0) {
-            maxY - minY
-        } else {
-            maxY
-        }
+        val spaceX = getSpace(maxX, minX)
+        val spaceY = getSpace(maxY, minY)
 
         val graphSpaceStartX = calculateXAxisFirstTick()
         val graphSpaceEndX = calculateXAxisLastTick()
@@ -648,15 +640,12 @@ class Chart @JvmOverloads constructor(
                 val circleSize = Dp(8f).toPx(context)
                 if (startX.value < pointX && endX.value > pointX) {
 
-                    circlePaint.style = Paint.Style.FILL
-                    circlePaint.color = colorPrimary
+                    circlePaint.setCirclePaint()
                     canvas.drawCircle(pointX, startY.value, circleSize.value / 2, circlePaint)
 
                     val text = convertToText(data.y)
 
-                    textLabelPaint.typeface = Typeface.DEFAULT
-                    textLabelPaint.textSize = 48F
-                    textLabelPaint.color = colorOnPrimaryContainer
+                    textLabelPaint.setTextLabelPaint()
                     textLabelPaint.getTextBounds(text, 0, text.length, bounds)
 
                     val labelRectPaddingVertical = Dp(8F).toPx(context)
@@ -684,7 +673,107 @@ class Chart @JvmOverloads constructor(
                 }
             }
         }
+    }
 
+    private fun drawGridLine(canvas: Canvas) {
+
+        // Get chart data & max/min value
+        val chartData = dataset?.data ?: return
+
+        val maxY = chartData.maxOf { it.y }
+        val minY = chartData.minOf { it.y }
+        val spaceY = getSpace(maxY, minY)
+
+        val graphSpaceStartY = calculateYAxisFirstAndLastTick().second
+        val graphSpaceEndY = calculateYAxisFirstAndLastTick().first
+
+        val graphHeight = graphSpaceEndY - graphSpaceStartY
+
+        // Calculate available axis space
+        val availableSpace: Dp =
+            Px(width.toFloat()).toDp(context) - xAxisMarginStart - xAxisMarginEnd
+
+        //Draw GridLines
+        dataset?.gridLines?.sortedBy { it.value * -1 }?.forEach { data ->
+            val lineHeight: Px =
+                Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
+            if (minY > data.value || data.value > maxY) {
+                return@forEach
+            }
+            val axisStartPointX: Px = xAxisMarginStart.toPx(context)
+            val axisEndPointX: Px = (xAxisMarginStart + availableSpace).toPx(context)
+
+            gridLinePaint.setGridLinePaint()
+
+            canvas.drawLine(
+                axisStartPointX.value,
+                lineHeight.value,
+                axisEndPointX.value,
+                lineHeight.value,
+                gridLinePaint
+            )
+
+            // Draw ticks & labels
+            val labelString = data.name
+            gridLinePaint.getTextBounds(labelString, 0, labelString.length, bounds)
+
+            val textWidth = Px(bounds.width().toFloat())
+            val textHeight = Px(bounds.height().toFloat())
+
+            val labelStartPointX: Px = axisEndPointX - textWidth
+            val labelStartPointY: Px = lineHeight - textHeight
+
+            gridLinePaint.setTickPaint()
+
+            canvas.drawText(
+                data.name,
+                labelStartPointX.value,
+                labelStartPointY.value,
+                gridLinePaint
+            )
+        }
+    }
+
+    private fun getDifference(maxValue: Float, minValue: Float): Float {
+        return if (maxValue == minValue) {
+            maxValue
+        } else {
+            maxValue - minValue
+        }
+    }
+
+    private fun getAvailableLabelCount(availableLabelSpace: Dp, spacing: Dp): Int {
+        // Number of ticks
+        // ~ 150dp : 3 (max, min, 50%)
+        // ~ 250dp : 5 (max, min, 25%, 50%, 75%)
+        // 250dp ~ : Auto
+        return when {
+            availableLabelSpace.value <= 150F -> 3
+            availableLabelSpace.value <= 250F -> 5
+            else -> {
+                (availableLabelSpace / spacing).value.toInt()
+            }
+        }
+    }
+
+    private fun getNeededLabelCount(
+        availableLabels: Int,
+        availableLabelSpace: Dp,
+        spacing: Dp
+    ): Int {
+        return if (availableLabels <= 5) {
+            availableLabels
+        } else {
+            (availableLabelSpace / spacing).value.roundToInt()
+        }
+    }
+
+    private fun getSpace(max: Float, min: Float): Float {
+        return if (max - min > 0) {
+            max - min
+        } else {
+            max
+        }
     }
 
     private fun convertToText(num: Float): String {
@@ -757,91 +846,52 @@ class Chart @JvmOverloads constructor(
         return result
     }
 
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if (dataset?.isInteractive != true) {
-            return false
-        }
-        when (event?.action) {
-            MotionEvent.ACTION_DOWN -> {
-                parent.requestDisallowInterceptTouchEvent(true)
-                isDragging = true
-            }
-
-            MotionEvent.ACTION_MOVE -> {
-                pointX = event.x
-                invalidate()
-            }
-
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                parent.requestDisallowInterceptTouchEvent(false)
-                isDragging = false
-                invalidate()
-            }
-        }
-        return true
+    private fun Paint.setAxisPaint() {
+        style = Paint.Style.STROKE
+        strokeWidth = axisStrokeWidth
+        color = colorOnSurface
+        strokeJoin = Paint.Join.ROUND
+        strokeCap = Paint.Cap.ROUND
     }
 
-    private fun drawGridLine(canvas: Canvas, paint: Paint) {
+    private fun Paint.setTickPaint() {
+        strokeWidth = 2F
+        pathEffect = null
+        typeface = Typeface.DEFAULT
+        textSize = 24F
+        color = colorOnSurface
+    }
 
-        // Get chart data & max/min value
-        val chartData = dataset?.data ?: return
+    private fun Paint.setGradientPaint() {
+        style = Paint.Style.FILL
+        color = colorSurface
+    }
 
-        val maxY = chartData.maxOf { it.y }
-        val minY = chartData.minOf { it.y }
-        val spaceY = maxY - minY
+    private fun Paint.setLinePaint() {
+        style = Paint.Style.FILL
+        strokeWidth = 6F
+        strokeJoin = Paint.Join.ROUND
+        strokeCap = Paint.Cap.ROUND
+    }
 
-        val graphSpaceStartY = calculateYAxisFirstAndLastTick().second
-        val graphSpaceEndY = calculateYAxisFirstAndLastTick().first
+    private fun Paint.setCirclePaint() {
+        style = Paint.Style.FILL
+        color = colorPrimary
+    }
 
-        val graphHeight = graphSpaceEndY - graphSpaceStartY
+    private fun Paint.setTextLabelPaint() {
+        style = Paint.Style.FILL
+        typeface = Typeface.DEFAULT
+        textSize = 48F
+        color = colorOnPrimaryContainer
+    }
 
-        // Calculate available axis space
-        val availableSpace: Dp =
-            Px(width.toFloat()).toDp(context) - xAxisMarginStart - xAxisMarginEnd
-
-        //Draw GridLines
-        dataset?.gridLines?.sortedBy { it.value * -1 }?.forEach { data ->
-            val lineHeight: Px =
-                Px(1 - (data.value - minY) / spaceY) * graphHeight + graphSpaceStartY
-            if (minY > data.value || data.value > maxY) {
-                return@forEach
-            }
-            val axisStartPointX: Px = xAxisMarginStart.toPx(context)
-            val axisEndPointX: Px = (xAxisMarginStart + availableSpace).toPx(context)
-
-            //Set paint
-            val dashPath = DashPathEffect(floatArrayOf(25f, 5f), 2f)
-            paint.style = Paint.Style.STROKE
-            paint.pathEffect = dashPath
-            paint.strokeWidth = gridLineStrokeWidth
-            paint.color = colorSecondary
-
-            canvas.drawLine(
-                axisStartPointX.value,
-                lineHeight.value,
-                axisEndPointX.value,
-                lineHeight.value,
-                paint
-            )
-
-            // Draw ticks & labels
-            paint.strokeWidth = 2F
-            paint.pathEffect = null
-            paint.typeface = Typeface.DEFAULT
-            paint.textSize = 24F
-            paint.color = colorOnSurface
-
-            val labelString = data.name
-
-            paint.getTextBounds(labelString, 0, labelString.length, bounds)
-            val textWidth = Px(bounds.width().toFloat())
-            val textHeight = Px(bounds.height().toFloat())
-
-            val labelStartPointX: Px = axisEndPointX - textWidth
-            val labelStartPointY: Px = lineHeight - textHeight
-
-            canvas.drawText(data.name, labelStartPointX.value, labelStartPointY.value, paint)
-        }
+    private fun Paint.setGridLinePaint() {
+        val dashPath = DashPathEffect(floatArrayOf(25f, 5f), 2f)
+        style = Paint.Style.STROKE
+        pathEffect = dashPath
+        strokeWidth = gridLineStrokeWidth
+        color = colorSecondary
     }
 
     companion object {
