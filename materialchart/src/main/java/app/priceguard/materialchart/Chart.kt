@@ -646,7 +646,7 @@ class Chart @JvmOverloads constructor(
                     canvas.drawCircle(pointX, startY.value, circleSize.value / 2, circlePaint)
 
                     val text =
-                        "${dataset?.xLabel ?: "x"} : ${convertTimeStampToDate(pointXData, dataset?.graphMode?: GraphMode.DAY)}," +
+                        "${dataset?.xLabel ?: "x"} : ${convertTimeStampToDate(pointXData, dataset?.graphMode ?: GraphMode.DAY)}," +
                                 " ${dataset?.yLabel ?: "y"} : ${convertToText(data.y)}"
 
 
