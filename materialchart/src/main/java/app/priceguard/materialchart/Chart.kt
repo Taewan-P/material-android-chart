@@ -270,7 +270,6 @@ class Chart @JvmOverloads constructor(
         val minPointX: Px = axisStartPointX
         val maxPointX: Px = axisEndPointX - xAxisPadding.toPx(context)
 
-
         val minLabel: String = convertTimeStampToDate(minValue, dataset?.graphMode ?: GraphMode.DAY)
         val maxLabel: String = convertTimeStampToDate(maxValue, dataset?.graphMode ?: GraphMode.DAY)
 
@@ -293,8 +292,19 @@ class Chart @JvmOverloads constructor(
         drawXAxisLabelText(canvas, minLabel, minPointX, tickEndPointY, Dp(8F), actualSpacing, paint)
         drawXAxisLabelText(canvas, maxLabel, maxPointX, tickEndPointY, Dp(8F), actualSpacing, paint)
 
+        // Calculate X axis label range -> This is to prevent overlapping label text at the start/end.
+        paint.getTextBounds(minLabel, 0, minLabel.length, bounds)
+        val textWidth = Px(bounds.width().toFloat())
+        val boundX = minPointX + textWidth + Dp(4F).toPx(context)
+
+        // Draw remaining ticks & labels
         (neededLabels - 1 downTo 1).forEach { idx ->
             val tickPointX: Px = maxPointX - actualSpacing.toPx(context) * Px(idx.toFloat())
+
+            if (tickPointX.value < boundX.value) {
+                // Overlapping first tick. Ignore
+                return@forEach
+            }
 
             val labelString =
                 convertTimeStampToDate(maxValue - idx * unit, dataset?.graphMode ?: GraphMode.DAY)
@@ -402,9 +412,19 @@ class Chart @JvmOverloads constructor(
         drawYAxisLabelText(canvas, minValue, tickStartPointX, minPointY, Dp(8F), paint)
         drawYAxisLabelText(canvas, maxValue, tickStartPointX, maxPointY, Dp(8F), paint)
 
+        // Calculate Y axis label range -> This is to prevent overlapping label text at the start/end.
+        paint.getTextBounds(maxValue.toString(), 0, maxValue.toString().length, bounds)
+        val textHeight = Px(bounds.height().toFloat())
+        val boundY = maxPointY + textHeight + Dp(4F).toPx(context)
+
         // Draw remaining ticks
         (1 until neededLabels).forEach { idx ->
             val tickPointY: Px = minPointY - actualSpacing.toPx(context) * Px(idx.toFloat())
+
+            if (tickPointY.value < boundY.value) {
+                // Overlapping first tick. Ignore
+                return@forEach
+            }
 
             if (tickPointY.value >= maxPointY.value) {
                 drawAxisTick(canvas, tickStartPointX, tickPointY, tickEndPointX, tickPointY, paint)
