@@ -302,7 +302,8 @@ class Chart @JvmOverloads constructor(
             val tickPointX: Px = maxPointX - actualSpacing.toPx(context) * Px(idx.toFloat())
 
             if (tickPointX.value < boundX.value) {
-                // Overlapping first tick. Ignore
+                // Overlapping first tick. Ignore label text
+                drawAxisTick(canvas, tickPointX, tickStartPointY, tickPointX, tickEndPointY, paint)
                 return@forEach
             }
 
@@ -422,7 +423,8 @@ class Chart @JvmOverloads constructor(
             val tickPointY: Px = minPointY - actualSpacing.toPx(context) * Px(idx.toFloat())
 
             if (tickPointY.value < boundY.value) {
-                // Overlapping first tick. Ignore
+                // Overlapping last tick. Ignore label text
+                drawAxisTick(canvas, tickStartPointX, tickPointY, tickEndPointX, tickPointY, paint)
                 return@forEach
             }
 
