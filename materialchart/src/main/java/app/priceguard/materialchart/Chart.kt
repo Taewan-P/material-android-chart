@@ -100,6 +100,7 @@ class Chart @JvmOverloads constructor(
     private val zeroDp = Dp(1F)
 
     private var pointX = 0f
+    private var pointY = 0f
     private var isDragging = false
 
     // Use Android theme
@@ -193,10 +194,20 @@ class Chart @JvmOverloads constructor(
     }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if (dataset?.isInteractive != true) {
+        if (dataset?.isInteractive != true || event == null) {
             return false
         }
-        when (event?.action) {
+        pointX = event.x
+        pointY = event.y
+
+        if (pointX < xAxisMarginStart.toPx(context).value
+            || pointX > width.toFloat() - xAxisMarginStart.toPx(context).value
+            || pointY < yAxisMarginEnd.toPx(context).value
+            || pointY > height.toFloat() - yAxisMarginEnd.toPx(context).value
+        ) {
+            return true
+        }
+        when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 parent.requestDisallowInterceptTouchEvent(true)
                 isDragging = true
@@ -656,6 +667,8 @@ class Chart @JvmOverloads constructor(
         val graphWidth = graphSpaceEndX - graphSpaceStartX
         val graphHeight = graphSpaceEndY - graphSpaceStartY
 
+        val pointXData = spaceX * ((pointX - graphSpaceStartX.value) / graphWidth.value) + minX
+
         chartData.forEachIndexed { index, data ->
             if (index < size - 1) {
                 val next = chartData[index + 1]
@@ -671,7 +684,15 @@ class Chart @JvmOverloads constructor(
                     circlePaint.setCirclePaint()
                     canvas.drawCircle(pointX, startY.value, circleSize.value / 2, circlePaint)
 
-                    val text = convertToText(data.y)
+                    val text =
+                        "${dataset?.xLabel ?: "x"} : ${
+                            convertTimeStampToDate(
+                                pointXData,
+                                dataset?.graphMode ?: GraphMode.DAY
+                            )
+                        }," +
+                                " ${dataset?.yLabel ?: "y"} : ${convertToText(data.y)}"
+
 
                     textLabelPaint.setTextLabelPaint()
                     textLabelPaint.getTextBounds(text, 0, text.length, bounds)
@@ -682,6 +703,15 @@ class Chart @JvmOverloads constructor(
 
                     val rectWidth = bounds.width()
                     val rectHeight = bounds.height()
+
+                    // Fix point label position when position is out of range
+                    if (pointX - rectWidth / 2 - labelRectPaddingHorizontal.value < 0) {
+                        pointX = rectWidth / 2 + labelRectPaddingHorizontal.value
+                    }
+                    if (pointX + rectWidth / 2 + labelRectPaddingHorizontal.value > width.toFloat()) {
+                        pointX = width.toFloat() - rectWidth / 2 - labelRectPaddingHorizontal.value
+                    }
+
                     val rect = RectF(
                         pointX - rectWidth / 2 - labelRectPaddingHorizontal.value,
                         startY.value - rectHeight - distanceTextAndPoint.value - labelRectPaddingVertical.value,
@@ -692,6 +722,7 @@ class Chart @JvmOverloads constructor(
                     textRectPaint.color = colorPrimaryContainer
 
                     canvas.drawRoundRect(rect, 10f, 10f, textRectPaint)
+
                     canvas.drawText(
                         text,
                         pointX - bounds.width() / 2 - 4F,
@@ -908,9 +939,7 @@ class Chart @JvmOverloads constructor(
     }
 
     private fun Paint.setTextLabelPaint() {
-        style = Paint.Style.FILL
-        typeface = Typeface.DEFAULT
-        textSize = 48F
+        textSize = 36F
         color = colorOnPrimaryContainer
     }
 
