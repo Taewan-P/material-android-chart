@@ -286,8 +286,24 @@ class Chart @JvmOverloads constructor(
 
         drawAxisTick(canvas, minPointX, tickStartPointY, minPointX, tickEndPointY, xAxisPaint)
         drawAxisTick(canvas, maxPointX, tickStartPointY, maxPointX, tickEndPointY, xAxisPaint)
-        drawXAxisLabelText(canvas, minLabel, minPointX, tickEndPointY, Dp(8F), actualSpacing, xAxisPaint)
-        drawXAxisLabelText(canvas, maxLabel, maxPointX, tickEndPointY, Dp(8F), actualSpacing, xAxisPaint)
+        drawXAxisLabelText(
+            canvas,
+            minLabel,
+            minPointX,
+            tickEndPointY,
+            Dp(8F),
+            actualSpacing,
+            xAxisPaint
+        )
+        drawXAxisLabelText(
+            canvas,
+            maxLabel,
+            maxPointX,
+            tickEndPointY,
+            Dp(8F),
+            actualSpacing,
+            xAxisPaint
+        )
 
         (neededLabels - 1 downTo 1).forEach { idx ->
             val tickPointX: Px = maxPointX - actualSpacing.toPx(context) * Px(idx.toFloat())
@@ -295,7 +311,14 @@ class Chart @JvmOverloads constructor(
             val labelString =
                 convertTimeStampToDate(maxValue - idx * unit, dataset?.graphMode ?: GraphMode.DAY)
             if (tickPointX.value >= axisStartPointX.value) {
-                drawAxisTick(canvas, tickPointX, tickStartPointY, tickPointX, tickEndPointY, xAxisPaint)
+                drawAxisTick(
+                    canvas,
+                    tickPointX,
+                    tickStartPointY,
+                    tickPointX,
+                    tickEndPointY,
+                    xAxisPaint
+                )
                 drawXAxisLabelText(
                     canvas,
                     labelString,
@@ -362,7 +385,14 @@ class Chart @JvmOverloads constructor(
 
         if (minValue == maxValue) {
             val middlePointY = (minPointY + maxPointY) / Px(2F)
-            drawAxisTick(canvas, tickStartPointX, middlePointY, tickEndPointX, middlePointY, yAxisPaint)
+            drawAxisTick(
+                canvas,
+                tickStartPointX,
+                middlePointY,
+                tickEndPointX,
+                middlePointY,
+                yAxisPaint
+            )
             drawYAxisLabelText(canvas, maxValue, tickStartPointX, middlePointY, Dp(8F), yAxisPaint)
             return
         }
@@ -377,7 +407,14 @@ class Chart @JvmOverloads constructor(
             val tickPointY: Px = minPointY - actualSpacing.toPx(context) * Px(idx.toFloat())
 
             if (tickPointY.value >= maxPointY.value) {
-                drawAxisTick(canvas, tickStartPointX, tickPointY, tickEndPointX, tickPointY, yAxisPaint)
+                drawAxisTick(
+                    canvas,
+                    tickStartPointX,
+                    tickPointY,
+                    tickEndPointX,
+                    tickPointY,
+                    yAxisPaint
+                )
                 drawYAxisLabelText(
                     canvas,
                     minValue + unit * idx,
@@ -688,7 +725,12 @@ class Chart @JvmOverloads constructor(
 
             gridLinePaint.setTickPaint()
 
-            canvas.drawText(data.name, labelStartPointX.value, labelStartPointY.value, gridLinePaint)
+            canvas.drawText(
+                data.name,
+                labelStartPointX.value,
+                labelStartPointY.value,
+                gridLinePaint
+            )
         }
     }
 
