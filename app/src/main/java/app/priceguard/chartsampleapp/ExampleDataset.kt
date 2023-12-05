@@ -10,6 +10,8 @@ data class ExampleDataset(
     override val showYAxis: Boolean,
     override val isInteractive: Boolean,
     override val graphMode: GraphMode,
+    override val xLabel: String,
+    override val yLabel: String,
     override val data: List<ChartData>,
     override val gridLines: List<GridLine>
 ) : ChartDataset

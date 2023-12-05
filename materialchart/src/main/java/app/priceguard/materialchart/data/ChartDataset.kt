@@ -5,6 +5,8 @@ interface ChartDataset {
     val showYAxis: Boolean
     val isInteractive: Boolean
     val graphMode: GraphMode
+    val xLabel: String
+    val yLabel: String
     val data: List<ChartData>
     val gridLines: List<GridLine>
 }
