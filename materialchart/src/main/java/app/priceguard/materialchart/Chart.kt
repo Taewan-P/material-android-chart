@@ -305,8 +305,20 @@ class Chart @JvmOverloads constructor(
             xAxisPaint
         )
 
+        // Calculate X axis label range -> This is to prevent overlapping label text at the start/end.
+        paint.getTextBounds(minLabel, 0, minLabel.length, bounds)
+        val textWidth = Px(bounds.width().toFloat())
+        val boundX = minPointX + textWidth + Dp(4F).toPx(context)
+
+        // Draw remaining ticks & labels
         (neededLabels - 1 downTo 1).forEach { idx ->
             val tickPointX: Px = maxPointX - actualSpacing.toPx(context) * Px(idx.toFloat())
+
+            if (tickPointX.value < boundX.value) {
+                // Overlapping first tick. Ignore label text
+                drawAxisTick(canvas, tickPointX, tickStartPointY, tickPointX, tickEndPointY, paint)
+                return@forEach
+            }
 
             val labelString =
                 convertTimeStampToDate(maxValue - idx * unit, dataset?.graphMode ?: GraphMode.DAY)
@@ -402,9 +414,20 @@ class Chart @JvmOverloads constructor(
         drawYAxisLabelText(canvas, minValue, tickStartPointX, minPointY, Dp(8F), yAxisPaint)
         drawYAxisLabelText(canvas, maxValue, tickStartPointX, maxPointY, Dp(8F), yAxisPaint)
 
+        // Calculate Y axis label range -> This is to prevent overlapping label text at the start/end.
+        paint.getTextBounds(maxValue.toString(), 0, maxValue.toString().length, bounds)
+        val textHeight = Px(bounds.height().toFloat())
+        val boundY = maxPointY + textHeight + Dp(4F).toPx(context)
+
         // Draw remaining ticks
         (1 until neededLabels).forEach { idx ->
             val tickPointY: Px = minPointY - actualSpacing.toPx(context) * Px(idx.toFloat())
+
+            if (tickPointY.value < boundY.value) {
+                // Overlapping last tick. Ignore label text
+                drawAxisTick(canvas, tickStartPointX, tickPointY, tickEndPointX, tickPointY, paint)
+                return@forEach
+            }
 
             if (tickPointY.value >= maxPointY.value) {
                 drawAxisTick(
@@ -509,6 +532,11 @@ class Chart @JvmOverloads constructor(
             (startPointX.toDp(context) - marginEnd - textWidth.toDp(context)).toPx(context)
         val labelStartPointY: Px =
             (startPointY.toDp(context) + textHeight.toDp(context) / Dp(2F)).toPx(context)
+
+        if (labelStartPointX.value < 0) {
+            // Automatically adjusts the graph margin
+            xAxisMarginStart = Dp(8F) + textWidth.toDp(context) + marginEnd + halfTickLength
+        }
 
         canvas.drawText(labelString, labelStartPointX.value, labelStartPointY.value, paint)
     }
