@@ -97,7 +97,7 @@ class Chart @JvmOverloads constructor(
     var gridLineStrokeWidth = 6f
 
     // ZeroDp: Delete Padding. 1dp for show lines in corners and edges
-    private var zeroDp = Dp(1F)
+    private val zeroDp = Dp(1F)
 
     private var pointX = 0f
     private var isDragging = false
