@@ -523,6 +523,11 @@ class Chart @JvmOverloads constructor(
         val labelStartPointY: Px =
             (startPointY.toDp(context) + textHeight.toDp(context) / Dp(2F)).toPx(context)
 
+        if (labelStartPointX.value < 0) {
+            // Automatically adjusts the graph margin
+            xAxisMarginStart = Dp(8F) + textWidth.toDp(context) + marginEnd + halfTickLength
+        }
+
         canvas.drawText(labelString, labelStartPointX.value, labelStartPointY.value, paint)
     }
 
