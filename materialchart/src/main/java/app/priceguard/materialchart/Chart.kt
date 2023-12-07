@@ -519,7 +519,7 @@ class Chart @JvmOverloads constructor(
             val labelStartPointY: Px = startPointY + marginTop.toPx(context) + textHeight
 
             canvas.save()
-            if (yAxisMarginStart.toPx(context).value < textWidth.value * ONE_OVER_SQRT_2) {
+            if ((yAxisMarginStart - halfTickLength - marginTop).toPx(context).value < textWidth.value * ONE_OVER_SQRT_2) {
                 // Automatically adjusts the graph margin
                 yAxisMarginStart = Px(
                     (textWidth.value * ONE_OVER_SQRT_2).roundToInt().toFloat()
