@@ -7,8 +7,12 @@ plugins {
     signing
 }
 
-group = "app.priceguard.materialchart"
-version = "0.1.0"
+val groupName = "app.priceguard"
+val packageName = "materialchart"
+val versionCode = "0.1.0"
+
+group = "$groupName.$packageName"
+version = versionCode
 
 extra["signing.keyId"] = null
 ext["signing.password"] = null
@@ -41,7 +45,7 @@ val javadocJar by tasks.registering(Jar::class) {
 fun getExtraString(name: String) = ext[name]?.toString()
 
 android {
-    namespace = "app.priceguard.materialchart"
+    namespace = "$groupName.$packageName"
     compileSdk = 34
 
     defaultConfig {
@@ -82,9 +86,9 @@ publishing {
         afterEvaluate {
             create<MavenPublication>("release") {
                 from(components["release"])
-                groupId = "app.priceguard"
-                artifactId = "materialchart"
-                version = "0.1.0"
+                groupId = groupName
+                artifactId = packageName
+                version = versionCode
 
                 pom {
                     name.set(artifactId)
