@@ -279,6 +279,27 @@ class Chart @JvmOverloads constructor(
         val minLabel: String = convertTimeStampToDate(minValue, dataset?.graphMode ?: GraphMode.DAY)
         val maxLabel: String = convertTimeStampToDate(maxValue, dataset?.graphMode ?: GraphMode.DAY)
 
+        // Calculate X axis label range -> This is to prevent overlapping label text at the start/end.
+        paint.getTextBounds(minLabel, 0, minLabel.length, bounds)
+        val textWidth = Px(bounds.width().toFloat())
+        val boundX = minPointX + textWidth + Dp(4F).toPx(context)
+
+        // Calculate whether label should tilt
+        val shouldLabelTextTilt = (neededLabels - 1 downTo  1).any { idx ->
+            val tickPointX: Px = maxPointX - actualSpacing.toPx(context) * Px(idx.toFloat())
+            val labelString =
+                convertTimeStampToDate(maxValue - idx * unit, dataset?.graphMode ?: GraphMode.DAY)
+
+            xAxisPaint.getTextBounds(labelString, 0, labelString.length, bounds)
+
+            val labelTextWidth = Px(bounds.width().toFloat())
+            val textMargin = Dp(8F).toPx(context)
+
+            (tickPointX.value >= boundX.value) &&
+                    (tickPointX.value >= axisStartPointX.value) &&
+                    ((labelTextWidth + textMargin).value >= actualSpacing.toPx(context).value)
+        }
+
         xAxisPaint.setTickPaint()
 
         if (minValue == maxValue) {
@@ -289,7 +310,7 @@ class Chart @JvmOverloads constructor(
                 maxPointX,
                 tickEndPointY,
                 Dp(8F),
-                actualSpacing,
+                shouldLabelTextTilt,
                 xAxisPaint
             )
             return
@@ -303,7 +324,7 @@ class Chart @JvmOverloads constructor(
             minPointX,
             tickEndPointY,
             Dp(8F),
-            actualSpacing,
+            shouldLabelTextTilt,
             xAxisPaint
         )
         drawXAxisLabelText(
@@ -312,14 +333,9 @@ class Chart @JvmOverloads constructor(
             maxPointX,
             tickEndPointY,
             Dp(8F),
-            actualSpacing,
+            shouldLabelTextTilt,
             xAxisPaint
         )
-
-        // Calculate X axis label range -> This is to prevent overlapping label text at the start/end.
-        paint.getTextBounds(minLabel, 0, minLabel.length, bounds)
-        val textWidth = Px(bounds.width().toFloat())
-        val boundX = minPointX + textWidth + Dp(4F).toPx(context)
 
         // Draw remaining ticks & labels
         (neededLabels - 1 downTo 1).forEach { idx ->
@@ -348,7 +364,7 @@ class Chart @JvmOverloads constructor(
                     tickPointX,
                     tickEndPointY,
                     Dp(8F),
-                    actualSpacing,
+                    shouldLabelTextTilt,
                     xAxisPaint
                 )
             }
@@ -484,14 +500,14 @@ class Chart @JvmOverloads constructor(
         startPointX: Px,
         startPointY: Px,
         marginTop: Dp,
-        actualSpacing: Dp,
+        shouldLabelTextTilt: Boolean,
         paint: Paint
     ) {
         paint.getTextBounds(label, 0, label.length, bounds)
         val textWidth = Px(bounds.width().toFloat())
         val textHeight = Px(bounds.height().toFloat())
 
-        if ((textWidth + Dp(8F).toPx(context)).value < actualSpacing.toPx(context).value) {
+        if (!shouldLabelTextTilt) {
             // Print label text parallel to its axis
             val labelStartPointX: Px = startPointX - textWidth / Px(2F)
             val labelStartPointY: Px = startPointY + marginTop.toPx(context) + textHeight
