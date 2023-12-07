@@ -705,17 +705,18 @@ class Chart @JvmOverloads constructor(
                     val rectHeight = bounds.height()
 
                     // Fix point label position when position is out of range
-                    if (pointX - rectWidth / 2 - labelRectPaddingHorizontal.value < 0) {
-                        pointX = rectWidth / 2 + labelRectPaddingHorizontal.value
-                    }
-                    if (pointX + rectWidth / 2 + labelRectPaddingHorizontal.value > width.toFloat()) {
-                        pointX = width.toFloat() - rectWidth / 2 - labelRectPaddingHorizontal.value
+                    val labelRectPointX = if (pointX - (rectWidth + labelRectPaddingHorizontal.value) / 2 < 0) {
+                        (rectWidth + labelRectPaddingHorizontal.value) / 2
+                    } else if (pointX + (rectWidth + labelRectPaddingHorizontal.value) / 2 > width.toFloat()) {
+                        width.toFloat() - (rectWidth + labelRectPaddingHorizontal.value) / 2
+                    } else {
+                        pointX
                     }
 
                     val rect = RectF(
-                        pointX - rectWidth / 2 - labelRectPaddingHorizontal.value,
+                        labelRectPointX - rectWidth / 2 - labelRectPaddingHorizontal.value,
                         startY.value - rectHeight - distanceTextAndPoint.value - labelRectPaddingVertical.value,
-                        pointX + rectWidth / 2 + labelRectPaddingHorizontal.value,
+                        labelRectPointX + rectWidth / 2 + labelRectPaddingHorizontal.value,
                         startY.value - distanceTextAndPoint.value + labelRectPaddingVertical.value
                     )
 
@@ -725,7 +726,7 @@ class Chart @JvmOverloads constructor(
 
                     canvas.drawText(
                         text,
-                        pointX - bounds.width() / 2 - 4F,
+                        labelRectPointX - bounds.width() / 2 - 4F,
                         startY.value - distanceTextAndPoint.value,
                         textLabelPaint
                     )
