@@ -221,7 +221,6 @@ class Chart @JvmOverloads constructor(
                     pointX = event.x
                     invalidate()
                 }
-                longClickHandler?.removeCallbacksAndMessages(null)
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
