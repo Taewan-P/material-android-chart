@@ -104,7 +104,7 @@ class Chart @JvmOverloads constructor(
     private var pointX = 0f
     private var pointY = 0f
     private var isDragging = false
-    private val longClickDelayMillis = 1000L
+    private val longClickDelayMillis = 400L
     private var longClickHandler: Handler? = null
 
     // Use Android theme
@@ -224,11 +224,9 @@ class Chart @JvmOverloads constructor(
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                if (isDragging) {
-                    parent.requestDisallowInterceptTouchEvent(false)
-                    isDragging = false
-                    invalidate()
-                }
+                isDragging = false
+                invalidate()
+                parent.requestDisallowInterceptTouchEvent(false)
                 longClickHandler?.removeCallbacksAndMessages(null)
             }
         }
@@ -239,10 +237,9 @@ class Chart @JvmOverloads constructor(
         longClickHandler = Handler(Looper.getMainLooper())
         longClickHandler?.postDelayed({
             if (!isDragging) {
-                isDragging = true
                 parent.requestDisallowInterceptTouchEvent(true)
+                isDragging = true
                 pointX = x
-                invalidate()
             }
         }, longClickDelayMillis)
         return super.performClick()
