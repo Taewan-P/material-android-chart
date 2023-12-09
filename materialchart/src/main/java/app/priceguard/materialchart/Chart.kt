@@ -10,6 +10,8 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader.TileMode
 import android.graphics.Typeface
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -102,6 +104,8 @@ class Chart @JvmOverloads constructor(
     private var pointX = 0f
     private var pointY = 0f
     private var isDragging = false
+    private val longClickDelayMillis = 400L
+    private var longClickHandler: Handler? = null
 
     // Use Android theme
     private var colorPrimary: Int
@@ -200,31 +204,38 @@ class Chart @JvmOverloads constructor(
         pointX = event.x
         pointY = event.y
 
-        if (pointX < xAxisMarginStart.toPx(context).value
-            || pointX > width.toFloat() - xAxisMarginStart.toPx(context).value
-            || pointY < yAxisMarginEnd.toPx(context).value
-            || pointY > height.toFloat() - yAxisMarginEnd.toPx(context).value
-        ) {
-            return true
-        }
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                parent.requestDisallowInterceptTouchEvent(true)
-                isDragging = true
+                setLongClickHandler(event.x)
             }
 
             MotionEvent.ACTION_MOVE -> {
-                pointX = event.x
-                invalidate()
+                if (isDragging) {
+                    pointX = event.x
+                    invalidate()
+                }
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                parent.requestDisallowInterceptTouchEvent(false)
                 isDragging = false
                 invalidate()
+                parent.requestDisallowInterceptTouchEvent(false)
+                longClickHandler?.removeCallbacksAndMessages(null)
             }
         }
         return true
+    }
+
+    private fun setLongClickHandler(x: Float): Boolean {
+        longClickHandler = Handler(Looper.getMainLooper())
+        longClickHandler?.postDelayed({
+            if (!isDragging) {
+                parent.requestDisallowInterceptTouchEvent(true)
+                isDragging = true
+                pointX = x
+            }
+        }, longClickDelayMillis)
+        return super.performClick()
     }
 
     private fun drawXAxis(canvas: Canvas) {
@@ -285,7 +296,7 @@ class Chart @JvmOverloads constructor(
         val boundX = minPointX + textWidth + Dp(4F).toPx(context)
 
         // Calculate whether label should tilt
-        val shouldLabelTextTilt = (neededLabels - 1 downTo  1).any { idx ->
+        val shouldLabelTextTilt = (neededLabels - 1 downTo 1).any { idx ->
             val tickPointX: Px = maxPointX - actualSpacing.toPx(context) * Px(idx.toFloat())
             val labelString =
                 convertTimeStampToDate(maxValue - idx * unit, dataset?.graphMode ?: GraphMode.DAY)
@@ -721,13 +732,14 @@ class Chart @JvmOverloads constructor(
                     val rectHeight = bounds.height()
 
                     // Fix point label position when position is out of range
-                    val labelRectPointX = if (pointX - (rectWidth + labelRectPaddingHorizontal.value) / 2 < 0) {
-                        (rectWidth + labelRectPaddingHorizontal.value) / 2
-                    } else if (pointX + (rectWidth + labelRectPaddingHorizontal.value) / 2 > width.toFloat()) {
-                        width.toFloat() - (rectWidth + labelRectPaddingHorizontal.value) / 2
-                    } else {
-                        pointX
-                    }
+                    val labelRectPointX =
+                        if (pointX - (rectWidth + labelRectPaddingHorizontal.value) / 2 < 0) {
+                            (rectWidth + labelRectPaddingHorizontal.value) / 2
+                        } else if (pointX + (rectWidth + labelRectPaddingHorizontal.value) / 2 > width.toFloat()) {
+                            width.toFloat() - (rectWidth + labelRectPaddingHorizontal.value) / 2
+                        } else {
+                            pointX
+                        }
 
                     val rect = RectF(
                         labelRectPointX - rectWidth / 2 - labelRectPaddingHorizontal.value,
