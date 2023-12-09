@@ -197,22 +197,6 @@ class Chart @JvmOverloads constructor(
         }
     }
 
-    override fun performClick(): Boolean {
-        longClickHandler = Handler(Looper.getMainLooper())
-        longClickHandler?.postDelayed({
-            if (!isDragging) {
-                performLongClick()
-            }
-        }, longClickDelayMillis)
-        return super.performClick()
-    }
-
-    override fun performLongClick(): Boolean {
-        isDragging = true
-        parent.requestDisallowInterceptTouchEvent(true)
-        return super.performLongClick()
-    }
-
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (dataset?.isInteractive != true || event == null) {
             return false
@@ -229,13 +213,12 @@ class Chart @JvmOverloads constructor(
         }
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                performClick()
+                setLongClickHandler(event.x)
             }
 
             MotionEvent.ACTION_MOVE -> {
                 if (isDragging){
                     pointX = event.x
-                    longClickHandler?.removeCallbacksAndMessages(null)
                     invalidate()
                 }
             }
@@ -244,12 +227,25 @@ class Chart @JvmOverloads constructor(
                 if (isDragging) {
                     parent.requestDisallowInterceptTouchEvent(false)
                     isDragging = false
-                    longClickHandler?.removeCallbacksAndMessages(null)
                     invalidate()
                 }
             }
         }
         return true
+    }
+
+    private fun setLongClickHandler(x: Float): Boolean {
+        longClickHandler = Handler(Looper.getMainLooper())
+        longClickHandler?.postDelayed({
+            if (!isDragging) {
+                isDragging = true
+                parent.requestDisallowInterceptTouchEvent(true)
+                pointX = x
+                invalidate()
+                longClickHandler?.removeCallbacksAndMessages(null)
+            }
+        }, longClickDelayMillis)
+        return super.performClick()
     }
 
     private fun drawXAxis(canvas: Canvas) {
