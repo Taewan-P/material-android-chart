@@ -10,6 +10,8 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader.TileMode
 import android.graphics.Typeface
+import android.os.Handler
+import android.os.Looper
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
@@ -102,6 +104,8 @@ class Chart @JvmOverloads constructor(
     private var pointX = 0f
     private var pointY = 0f
     private var isDragging = false
+    private val longClickDelayMillis = 1000L
+    private var longClickHandler: Handler? = null
 
     // Use Android theme
     private var colorPrimary: Int
@@ -193,6 +197,22 @@ class Chart @JvmOverloads constructor(
         }
     }
 
+    override fun performClick(): Boolean {
+        longClickHandler = Handler(Looper.getMainLooper())
+        longClickHandler?.postDelayed({
+            if (!isDragging) {
+                performLongClick()
+            }
+        }, longClickDelayMillis)
+        return super.performClick()
+    }
+
+    override fun performLongClick(): Boolean {
+        isDragging = true
+        parent.requestDisallowInterceptTouchEvent(true)
+        return super.performLongClick()
+    }
+
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         if (dataset?.isInteractive != true || event == null) {
             return false
@@ -209,19 +229,24 @@ class Chart @JvmOverloads constructor(
         }
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                parent.requestDisallowInterceptTouchEvent(true)
-                isDragging = true
+                performClick()
             }
 
             MotionEvent.ACTION_MOVE -> {
-                pointX = event.x
-                invalidate()
+                if (isDragging){
+                    pointX = event.x
+                    longClickHandler?.removeCallbacksAndMessages(null)
+                    invalidate()
+                }
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                parent.requestDisallowInterceptTouchEvent(false)
-                isDragging = false
-                invalidate()
+                if (isDragging) {
+                    parent.requestDisallowInterceptTouchEvent(false)
+                    isDragging = false
+                    longClickHandler?.removeCallbacksAndMessages(null)
+                    invalidate()
+                }
             }
         }
         return true
