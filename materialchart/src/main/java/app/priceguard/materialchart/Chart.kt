@@ -204,13 +204,6 @@ class Chart @JvmOverloads constructor(
         pointX = event.x
         pointY = event.y
 
-        if (pointX < xAxisMarginStart.toPx(context).value
-            || pointX > width.toFloat() - xAxisMarginStart.toPx(context).value
-            || pointY < yAxisMarginEnd.toPx(context).value
-            || pointY > height.toFloat() - yAxisMarginEnd.toPx(context).value
-        ) {
-            return true
-        }
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 setLongClickHandler(event.x)
