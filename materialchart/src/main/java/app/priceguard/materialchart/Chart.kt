@@ -217,10 +217,11 @@ class Chart @JvmOverloads constructor(
             }
 
             MotionEvent.ACTION_MOVE -> {
-                if (isDragging){
+                if (isDragging) {
                     pointX = event.x
                     invalidate()
                 }
+                longClickHandler?.removeCallbacksAndMessages(null)
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -229,6 +230,7 @@ class Chart @JvmOverloads constructor(
                     isDragging = false
                     invalidate()
                 }
+                longClickHandler?.removeCallbacksAndMessages(null)
             }
         }
         return true
@@ -242,7 +244,6 @@ class Chart @JvmOverloads constructor(
                 parent.requestDisallowInterceptTouchEvent(true)
                 pointX = x
                 invalidate()
-                longClickHandler?.removeCallbacksAndMessages(null)
             }
         }, longClickDelayMillis)
         return super.performClick()
@@ -306,7 +307,7 @@ class Chart @JvmOverloads constructor(
         val boundX = minPointX + textWidth + Dp(4F).toPx(context)
 
         // Calculate whether label should tilt
-        val shouldLabelTextTilt = (neededLabels - 1 downTo  1).any { idx ->
+        val shouldLabelTextTilt = (neededLabels - 1 downTo 1).any { idx ->
             val tickPointX: Px = maxPointX - actualSpacing.toPx(context) * Px(idx.toFloat())
             val labelString =
                 convertTimeStampToDate(maxValue - idx * unit, dataset?.graphMode ?: GraphMode.DAY)
@@ -742,13 +743,14 @@ class Chart @JvmOverloads constructor(
                     val rectHeight = bounds.height()
 
                     // Fix point label position when position is out of range
-                    val labelRectPointX = if (pointX - (rectWidth + labelRectPaddingHorizontal.value) / 2 < 0) {
-                        (rectWidth + labelRectPaddingHorizontal.value) / 2
-                    } else if (pointX + (rectWidth + labelRectPaddingHorizontal.value) / 2 > width.toFloat()) {
-                        width.toFloat() - (rectWidth + labelRectPaddingHorizontal.value) / 2
-                    } else {
-                        pointX
-                    }
+                    val labelRectPointX =
+                        if (pointX - (rectWidth + labelRectPaddingHorizontal.value) / 2 < 0) {
+                            (rectWidth + labelRectPaddingHorizontal.value) / 2
+                        } else if (pointX + (rectWidth + labelRectPaddingHorizontal.value) / 2 > width.toFloat()) {
+                            width.toFloat() - (rectWidth + labelRectPaddingHorizontal.value) / 2
+                        } else {
+                            pointX
+                        }
 
                     val rect = RectF(
                         labelRectPointX - rectWidth / 2 - labelRectPaddingHorizontal.value,
