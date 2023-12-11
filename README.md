@@ -11,7 +11,7 @@ Simple Material You(3) style Android line chart library. Inspired by Google Fina
 
 - Material 3 style & color override
 - Color customization for small section of line graph
-- On touch label
+- On long-touch label
 - Guideline
 - Dynamic Axis tick change
 
@@ -20,17 +20,35 @@ Simple Material You(3) style Android line chart library. Inspired by Google Fina
 - Various data types
 - Other data in X axis
 - Scroll or Zoom
-- Pull our library from maven
 
-## Test App
+## Try our Sample App
 
 1. Clone our repo
 2. Checkout to `main` branch
 3. Build the app
 
-## How to use 
+## How to use
 
-We did not package our release to any remote repositories, so you have to manually add a module in your project.
+### By using remote repository
+
+In your app build gradle:
+
+```kts
+implementation("app.priceguard:materialchart:0.2.0")
+```
+
+Make sure that you have maven central added to the repositories.
+
+```kts
+repositories {
+    mavenCentral()
+}
+```
+
+
+
+### By using submodule
+
 Just add a submodule to your repo where the module should be by using:
 
 ```shell
