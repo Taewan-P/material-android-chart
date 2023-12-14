@@ -102,7 +102,7 @@ class Chart @JvmOverloads constructor(
     private val zeroDp = Dp(1F)
 
     private var pointX = 0f
-    private var pointY = 0f
+
     private var isDragging = false
     private val longClickDelayMillis = 400L
     private var longClickHandler: Handler? = null
@@ -202,7 +202,6 @@ class Chart @JvmOverloads constructor(
             return false
         }
         pointX = event.x
-        pointY = event.y
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
