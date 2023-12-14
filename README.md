@@ -34,7 +34,7 @@ Simple Material You(3) style Android line chart library. Inspired by Google Fina
 In your app build gradle:
 
 ```kts
-implementation("app.priceguard:materialchart:0.2.0")
+implementation("app.priceguard:materialchart:0.2.1")
 ```
 
 Make sure that you have maven central added to the repositories.
