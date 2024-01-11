@@ -798,6 +798,8 @@ class Chart @JvmOverloads constructor(
             )
 
             // Draw ticks & labels
+            gridLinePaint.setTickPaint()
+
             val labelString = data.name
             gridLinePaint.getTextBounds(labelString, 0, labelString.length, bounds)
 
@@ -806,8 +808,6 @@ class Chart @JvmOverloads constructor(
 
             val labelStartPointX: Px = axisEndPointX - textWidth
             val labelStartPointY: Px = lineHeight - textHeight
-
-            gridLinePaint.setTickPaint()
 
             canvas.drawText(
                 data.name,
