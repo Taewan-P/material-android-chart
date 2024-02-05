@@ -9,7 +9,7 @@ plugins {
 
 val groupName = "app.priceguard"
 val packageName = "materialchart"
-val versionCode = "0.2.1"
+val versionCode = "0.2.2"
 
 group = "$groupName.$packageName"
 version = versionCode
