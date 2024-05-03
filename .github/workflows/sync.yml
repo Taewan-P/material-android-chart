@@ -17,4 +17,4 @@ jobs:
           fetch-depth: 0
       - name: Sync branch using subtree
         run: |
-          git subtree push --prefix materialchart origin release
+          git subtree push --prefix materialchart origin latest
