@@ -1,0 +1,26 @@
+name: Deploy to Maven Central
+
+on:
+  push:
+    branches:
+      - release
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch GPG Key
+        run: |
+          echo -n "${{ secrets.GPG_SIGNING_KEY }}" | base64 --decode > ${{ github.workspace }}/materialchart.gpg
+
+      - name: Setup local properties
+        run: |
+          echo -en "signing.keyId=${{ secrets.KEY_ID }}\nsigning.password=${{ secrets.KEY_PASSWORD }}\nsigning.secretKeyRingFile=${{ github.workspace }}/materialchart.gpg\nossrhUsername=${{ secrets.OSSRH_USERNAME }}\nossrhPassword=${{ secrets.OSSRH_PASSWORD }}\n" > local.properties
+
+      - name: Build and upload release
+        run: |
+          ./gradlew publishReleasePublicationToSonatypeRepository
