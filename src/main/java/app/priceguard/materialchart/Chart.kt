@@ -400,7 +400,11 @@ class Chart @JvmOverloads constructor(
 
         // Calculate how much each ticks should represent
         val difference = getDifference(maxValue, minValue)
-        val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
+        val unit = if (difference > realMinValue - minValue) {
+            roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
+        } else {
+            roundToSecondSignificantDigit(maxValue / (availableLabels - 1).toFloat())
+        }
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
         // Calculate how much labels are actually needed & override spacing
@@ -432,7 +436,7 @@ class Chart @JvmOverloads constructor(
 
         yAxisPaint.setTickPaint()
 
-        if (minValue == maxValue) {
+        if (realMinValue == maxValue) {
             val middlePointY = (minPointY + maxPointY) / Px(2F)
             drawAxisTick(
                 canvas,
@@ -898,7 +902,11 @@ class Chart @JvmOverloads constructor(
 
         // Calculate how much each ticks should represent
         val difference = getDifference(maxY, minY)
-        val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
+        val unit = if (difference > realMinY - minY) {
+            roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
+        } else {
+            roundToSecondSignificantDigit(maxY / (availableLabels - 1).toFloat())
+        }
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
         val minToRealMinSpacing = Dp(realMinY - minY) * actualSpacing / Dp(unit)
 
@@ -906,7 +914,7 @@ class Chart @JvmOverloads constructor(
         val maxPointY: Px = (axisEndPointY.toDp(context) + yAxisPadding / Dp(2F)).toPx(context)
 
         if (maxY == realMinY) {
-            val middlePointY = (minPointY + maxPointY) / Px(2F)
+            val middlePointY = (minPointY + minToRealMinSpacing.toPx(context) + maxPointY) / Px(2F)
             return Pair(middlePointY, middlePointY)
         }
 
