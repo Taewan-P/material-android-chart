@@ -257,7 +257,7 @@ class Chart @JvmOverloads constructor(
 
         // Calculate how much each ticks should represent
         val difference = getDifference(maxValue, minValue)
-        val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
+        val unit = roundUpToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
         // Calculate how much labels are actually needed & override spacing
@@ -401,9 +401,9 @@ class Chart @JvmOverloads constructor(
         // Calculate how much each ticks should represent
         val difference = getDifference(maxValue, minValue)
         val unit = if (difference > realMinValue - minValue) {
-            roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
+            roundUpToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
         } else {
-            roundToSecondSignificantDigit(maxValue / (availableLabels - 1).toFloat())
+            roundUpToSecondSignificantDigit(maxValue / (availableLabels - 1).toFloat())
         }
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
@@ -903,9 +903,9 @@ class Chart @JvmOverloads constructor(
         // Calculate how much each ticks should represent
         val difference = getDifference(maxY, minY)
         val unit = if (difference > realMinY - minY) {
-            roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
+            roundUpToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
         } else {
-            roundToSecondSignificantDigit(maxY / (availableLabels - 1).toFloat())
+            roundUpToSecondSignificantDigit(maxY / (availableLabels - 1).toFloat())
         }
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
         val minToRealMinSpacing = Dp(realMinY - minY) * actualSpacing / Dp(unit)
@@ -934,7 +934,7 @@ class Chart @JvmOverloads constructor(
         return format.format(date)
     }
 
-    private fun roundToSecondSignificantDigit(number: Float): Float {
+    private fun roundUpToSecondSignificantDigit(number: Float): Float {
         if (number == 0F) {
             return 0F
         }
