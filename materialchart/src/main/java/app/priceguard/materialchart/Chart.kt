@@ -957,9 +957,9 @@ class Chart @JvmOverloads constructor(
         }
 
         val absNumber = abs(number)
-        val log10 = floor(log10(absNumber.toDouble())).toInt()
-        val factor = 10.0.pow(log10 - 1).toFloat()
-        val roundedNumber = floor(absNumber / factor) * factor
+        val digit = floor(log10(absNumber)).toInt()
+        val power = 10F.pow(digit - 1)
+        val roundedNumber = floor(absNumber / power) * power
 
         return if (number < 0) -roundedNumber else roundedNumber
     }
