@@ -388,7 +388,10 @@ class Chart @JvmOverloads constructor(
 
         val maxValue = chartData.maxOf { it.y }
         val realMinValue = chartData.minOf { it.y }
-        val minValue = roundDownToSecondSignificantDigit(realMinValue, (maxValue - realMinValue).toInt().toString().length)
+        val minValue = roundDownToSignificantDigit(
+            realMinValue,
+            (maxValue - realMinValue).toInt().toString().length
+        )
 
         // Calculate available axis space
         val availableSpace: Dp =
@@ -885,7 +888,8 @@ class Chart @JvmOverloads constructor(
 
         val maxY = chartData.maxOf { it.y }
         val realMinY = chartData.minOf { it.y }
-        val minY = roundDownToSecondSignificantDigit(realMinY, (maxY - realMinY).toInt().toString().length)
+        val minY =
+            roundDownToSignificantDigit(realMinY, (maxY - realMinY).toInt().toString().length)
 
         val availableSpace: Dp =
             Px(height.toFloat()).toDp(context) - yAxisMarginStart - yAxisMarginEnd
@@ -902,7 +906,10 @@ class Chart @JvmOverloads constructor(
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
         val minToRealMinSpacing = Dp(realMinY - minY) * actualSpacing / Dp(unit)
 
-        val minPointY: Px = (axisStartPointY.toDp(context) - (yAxisPadding / Dp(2F)) - minToRealMinSpacing).toPx(context)
+        val minPointY: Px =
+            (axisStartPointY.toDp(context) - (yAxisPadding / Dp(2F)) - minToRealMinSpacing).toPx(
+                context
+            )
         val maxPointY: Px = (axisEndPointY.toDp(context) + yAxisPadding / Dp(2F)).toPx(context)
 
         if (maxY == realMinY) {
@@ -944,7 +951,7 @@ class Chart @JvmOverloads constructor(
         return if (number < 0) -result else result
     }
 
-    private fun roundDownToSecondSignificantDigit(number: Float, significantDigit: Int): Float {
+    private fun roundDownToSignificantDigit(number: Float, significantDigit: Int): Float {
         if (number == 0F) {
             return 0F
         }
