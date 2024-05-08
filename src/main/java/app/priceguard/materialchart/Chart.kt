@@ -931,16 +931,17 @@ class Chart @JvmOverloads constructor(
             return 0F
         }
 
-        val digit = floor(log10(number))
+        val absNumber = abs(number)
+        val digit = floor(log10(absNumber))
         val power = 10F.pow(digit)
 
-        val result = (number / power).roundToInt() * power
+        val result = (absNumber / power).roundToInt() * power
 
-        if (result < number) {
+        if (result < absNumber) {
             return result + power
         }
 
-        return result
+        return if (number < 0) -result else result
     }
 
     private fun roundDownToSecondSignificantDigit(number: Float, significantDigit: Int): Float {
