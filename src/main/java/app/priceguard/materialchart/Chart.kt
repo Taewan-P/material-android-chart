@@ -388,7 +388,7 @@ class Chart @JvmOverloads constructor(
 
         val maxValue = chartData.maxOf { it.y }
         val realMinValue = chartData.minOf { it.y }
-        val minValue = roundDownToSecondSignificantDigit(realMinValue)
+        val minValue = roundDownToSecondSignificantDigit(realMinValue, (maxValue - realMinValue).toInt().toString().length)
 
         // Calculate available axis space
         val availableSpace: Dp =
@@ -885,7 +885,7 @@ class Chart @JvmOverloads constructor(
 
         val maxY = chartData.maxOf { it.y }
         val realMinY = chartData.minOf { it.y }
-        val minY = roundDownToSecondSignificantDigit(realMinY)
+        val minY = roundDownToSecondSignificantDigit(realMinY, (maxY - realMinY).toInt().toString().length)
 
         val availableSpace: Dp =
             Px(height.toFloat()).toDp(context) - yAxisMarginStart - yAxisMarginEnd
@@ -943,14 +943,15 @@ class Chart @JvmOverloads constructor(
         return result
     }
 
-    private fun roundDownToSecondSignificantDigit(number: Float): Float {
+    private fun roundDownToSecondSignificantDigit(number: Float, significantDigit: Int): Float {
         if (number == 0F) {
             return 0F
         }
-
         val absNumber = abs(number)
+        val originalNumberDigit = absNumber.toInt().toString().length
+        val digitToRound = originalNumberDigit - significantDigit
         val digit = floor(log10(absNumber)).toInt()
-        val power = 10F.pow(digit - 1)
+        val power = 10F.pow(digit - digitToRound)
         val roundedNumber = floor(absNumber / power) * power
 
         return if (number < 0) -roundedNumber else roundedNumber
