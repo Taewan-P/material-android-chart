@@ -30,6 +30,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
@@ -941,26 +942,24 @@ class Chart @JvmOverloads constructor(
         val absNumber = abs(number)
         val digit = floor(log10(absNumber))
         val power = 10F.pow(digit)
+        val roundedNumber =
+            if (number < 0) floor(absNumber / power) * power else ceil(absNumber / power) * power
 
-        val result = (absNumber / power).roundToInt() * power
-
-        if (result < absNumber) {
-            return result + power
-        }
-
-        return if (number < 0) -result else result
+        return if (number < 0) -roundedNumber else roundedNumber
     }
 
     private fun roundDownToSignificantDigit(number: Float, significantDigit: Int): Float {
         if (number == 0F) {
             return 0F
         }
+
         val absNumber = abs(number)
         val originalNumberDigit = absNumber.toInt().toString().length
         val digitToRound = originalNumberDigit - significantDigit
         val digit = floor(log10(absNumber)).toInt()
         val power = 10F.pow(digit - digitToRound)
-        val roundedNumber = floor(absNumber / power) * power
+        val roundedNumber =
+            if (number < 0) ceil(absNumber / power) * power else floor(absNumber / power) * power
 
         return if (number < 0) -roundedNumber else roundedNumber
     }
