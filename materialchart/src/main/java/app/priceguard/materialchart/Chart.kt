@@ -29,6 +29,8 @@ import app.priceguard.materialchart.util.toPx
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.log10
 import kotlin.math.pow
@@ -256,7 +258,7 @@ class Chart @JvmOverloads constructor(
 
         // Calculate how much each ticks should represent
         val difference = getDifference(maxValue, minValue)
-        val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
+        val unit = roundUpToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
         // Calculate how much labels are actually needed & override spacing
@@ -386,7 +388,11 @@ class Chart @JvmOverloads constructor(
         val chartData = dataset?.data ?: return
 
         val maxValue = chartData.maxOf { it.y }
-        val minValue = chartData.minOf { it.y }
+        val realMinValue = chartData.minOf { it.y }
+        val minValue = roundDownToSignificantDigit(
+            realMinValue,
+            (maxValue - realMinValue).toInt().toString().length
+        )
 
         // Calculate available axis space
         val availableSpace: Dp =
@@ -398,7 +404,7 @@ class Chart @JvmOverloads constructor(
 
         // Calculate how much each ticks should represent
         val difference = getDifference(maxValue, minValue)
-        val unit = roundToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
+        val unit = roundUpToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
         val actualSpacing = availableLabelSpace * Dp(unit / difference)
 
         // Calculate how much labels are actually needed & override spacing
@@ -430,7 +436,7 @@ class Chart @JvmOverloads constructor(
 
         yAxisPaint.setTickPaint()
 
-        if (minValue == maxValue) {
+        if (realMinValue == maxValue) {
             val middlePointY = (minPointY + maxPointY) / Px(2F)
             drawAxisTick(
                 canvas,
@@ -882,18 +888,33 @@ class Chart @JvmOverloads constructor(
         val chartData = dataset?.data!!
 
         val maxY = chartData.maxOf { it.y }
-        val minY = chartData.minOf { it.y }
+        val realMinY = chartData.minOf { it.y }
+        val minY =
+            roundDownToSignificantDigit(realMinY, (maxY - realMinY).toInt().toString().length)
 
         val availableSpace: Dp =
             Px(height.toFloat()).toDp(context) - yAxisMarginStart - yAxisMarginEnd
         val axisStartPointY: Px = (yAxisMarginEnd + availableSpace).toPx(context)
         val axisEndPointY: Px = yAxisMarginEnd.toPx(context)
 
-        val minPointY: Px = (axisStartPointY.toDp(context) - yAxisPadding / Dp(2F)).toPx(context)
+        // Calculate axis space and count that labels are actually drawn
+        val availableLabelSpace: Dp = availableSpace - yAxisPadding
+        val availableLabels = getAvailableLabelCount(availableLabelSpace, yAxisSpacing)
+
+        // Calculate how much each ticks should represent
+        val difference = getDifference(maxY, minY)
+        val unit = roundUpToSecondSignificantDigit(difference / (availableLabels - 1).toFloat())
+        val actualSpacing = availableLabelSpace * Dp(unit / difference)
+        val minToRealMinSpacing = Dp(realMinY - minY) * actualSpacing / Dp(unit)
+
+        val minPointY: Px =
+            (axisStartPointY.toDp(context) - (yAxisPadding / Dp(2F)) - minToRealMinSpacing).toPx(
+                context
+            )
         val maxPointY: Px = (axisEndPointY.toDp(context) + yAxisPadding / Dp(2F)).toPx(context)
 
-        if (maxY == minY) {
-            val middlePointY = (minPointY + maxPointY) / Px(2F)
+        if (maxY == realMinY) {
+            val middlePointY = (minPointY + minToRealMinSpacing.toPx(context) + maxPointY) / Px(2F)
             return Pair(middlePointY, middlePointY)
         }
 
@@ -913,21 +934,34 @@ class Chart @JvmOverloads constructor(
         return format.format(date)
     }
 
-    private fun roundToSecondSignificantDigit(number: Float): Float {
+    private fun roundUpToSecondSignificantDigit(number: Float): Float {
         if (number == 0F) {
             return 0F
         }
 
-        val digit = floor(log10(number))
+        val absNumber = abs(number)
+        val digit = floor(log10(absNumber))
         val power = 10F.pow(digit)
+        val roundedNumber =
+            if (number < 0) floor(absNumber / power) * power else ceil(absNumber / power) * power
 
-        val result = (number / power).roundToInt() * power
+        return if (number < 0) -roundedNumber else roundedNumber
+    }
 
-        if (result < number) {
-            return result + power
+    private fun roundDownToSignificantDigit(number: Float, significantDigit: Int): Float {
+        if (number == 0F) {
+            return 0F
         }
 
-        return result
+        val absNumber = abs(number)
+        val originalNumberDigit = absNumber.toInt().toString().length
+        val digitToRound = originalNumberDigit - significantDigit
+        val digit = floor(log10(absNumber)).toInt()
+        val power = 10F.pow(digit - digitToRound)
+        val roundedNumber =
+            if (number < 0) ceil(absNumber / power) * power else floor(absNumber / power) * power
+
+        return if (number < 0) -roundedNumber else roundedNumber
     }
 
     private fun Paint.setAxisPaint() {
