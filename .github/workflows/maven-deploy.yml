@@ -1,9 +1,8 @@
 name: Deploy to Maven Central
 
 on:
-  push:
-    branches:
-      - release
+  release:
+    types: [published]
   workflow_dispatch:
 
 jobs:
